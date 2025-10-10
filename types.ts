@@ -1,11 +1,8 @@
-// types.ts
-
-// --- FRONTEND-SPECIFIC TYPES ---
-
-export enum Page {
-  Dashboard = 'Dashboard',
-  Projects = 'Projects',
-  ProjectDetail = 'ProjectDetail',
+export interface Profile {
+  id: string; // uuid
+  full_name: string | null;
+  avatar_url: string | null;
+  role: string | null;
 }
 
 export enum ProjectStatus {
@@ -16,245 +13,139 @@ export enum ProjectStatus {
 }
 
 export enum TaskStatus {
-    ToDo = 'To Do',
-    InProgress = 'In Progress',
-    Done = 'Done',
+  ToDo = 'To Do',
+  InProgress = 'In Progress',
+  Done = 'Done',
 }
 
-
-// --- SUPABASE DATABASE TYPES ---
-// These types are generated from the database schema.
-// You can generate this automatically using `supabase gen types typescript > types.ts`
-
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
-
-export interface Database {
-  public: {
-    Tables: {
-      milestones: {
-        Row: {
-          completed: boolean | null
-          created_at: string
-          due_date: string
-          id: number
-          name: string
-          project_id: number
-        }
-        Insert: {
-          completed?: boolean | null
-          created_at?: string
-          due_date: string
-          id?: number
-          name: string
-          project_id: number
-        }
-        Update: {
-          completed?: boolean | null
-          created_at?: string
-          due_date?: string
-          id?: number
-          name?: string
-          project_id?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "milestones_project_id_fkey"
-            columns: ["project_id"]
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      profiles: {
-        Row: {
-          avatar_url: string | null
-          full_name: string | null
-          id: string
-          role: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          full_name?: string | null
-          id: string
-          role?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          full_name?: string | null
-          id?: string
-          role?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_id_fkey"
-            columns: ["id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      project_team_members: {
-        Row: {
-          project_id: number
-          user_id: string
-        }
-        Insert: {
-          project_id: number
-          user_id: string
-        }
-        Update: {
-          project_id?: number
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "project_team_members_project_id_fkey"
-            columns: ["project_id"]
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "project_team_members_user_id_fkey"
-            columns: ["user_id"]
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      projects: {
-        Row: {
-          budget: number | null
-          created_at: string
-          created_by: string
-          description: string | null
-          end_date: string | null
-          id: number
-          name: string
-          spent: number | null
-          start_date: string | null
-          status: string
-        }
-        Insert: {
-          budget?: number | null
-          created_at?: string
-          created_by?: string
-          description?: string | null
-          end_date?: string | null
-          id?: number
-          name: string
-          spent?: number | null
-          start_date?: string | null
-          status?: string
-        }
-        Update: {
-          budget?: number | null
-          created_at?: string
-          created_by?: string
-          description?: string | null
-          end_date?: string | null
-          id?: number
-          name?: string
-          spent?: number | null
-          start_date?: string | null
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "projects_created_by_fkey"
-            columns: ["created_by"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      tasks: {
-        Row: {
-          assignee_id: string | null
-          created_at: string
-          description: string | null
-          due_date: string | null
-          id: number
-          name: string
-          percent_complete: number | null
-          project_id: number
-          status: string
-        }
-        Insert: {
-          assignee_id?: string | null
-          created_at?: string
-          description?: string | null
-          due_date?: string | null
-          id?: number
-          name: string
-          percent_complete?: number | null
-          project_id: number
-          status?: string
-        }
-        Update: {
-          assignee_id?: string | null
-          created_at?: string
-          description?: string | null
-          due_date?: string | null
-          id?: number
-          name?: string
-          percent_complete?: number | null
-          project_id?: number
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tasks_assignee_id_fkey"
-            columns: ["assignee_id"]
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tasks_project_id_fkey"
-            columns: ["project_id"]
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      [_ in never]: never
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
+export interface Task {
+  id: number;
+  created_at: string;
+  name: string;
+  description: string | null;
+  status: TaskStatus;
+  due_date: string | null;
+  assignee_id: string | null; // uuid, foreign key to profiles.id
+  project_id: number; // foreign key to projects.id
+  percent_complete: number | null;
+  assignee?: Profile | null; // Optional, for joined data
 }
 
-// --- AUGMENTED FRONTEND TYPES ---
-// Combining database types with frontend requirements like nested relationships.
+export interface Milestone {
+  id: number;
+  created_at: string;
+  name: string;
+  due_date: string;
+  project_id: number;
+  completed: boolean;
+}
 
-type DbProject = Database['public']['Tables']['projects']['Row'];
-type DbTask = Database['public']['Tables']['tasks']['Row'];
-type DbMilestone = Database['public']['Tables']['milestones']['Row'];
-export type Profile = Database['public']['Tables']['profiles']['Row'];
+export interface ProjectTeamMember {
+  project_id: number;
+  user_id: string; // uuid
+  profile: Profile;
+}
 
-export interface Task extends DbTask {}
-export interface Milestone extends DbMilestone {}
-
-export interface Project extends DbProject {
+export interface Project {
+  id: number;
+  created_at: string;
+  name: string;
+  description: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  budget: number | null;
+  spent: number | null;
+  status: ProjectStatus;
+  created_by: string; // uuid
   tasks: Task[];
   milestones: Milestone[];
-  teamMembers: Profile[];
-  project_team_members: { profiles: Profile }[]; // For Supabase query structure
+  project_team_members: ProjectTeamMember[];
+  teamMembers?: Profile[]; // This seems to be populated client-side.
 }
+
+export enum Page {
+  Dashboard = 'dashboard',
+  Projects = 'projects',
+  ProjectDetail = 'project-detail',
+}
+
+
+// This is for Supabase client typing
+export type Database = {
+  public: {
+    Tables: {
+      profiles: {
+        Row: Profile;
+        Insert: Omit<Profile, 'id'>;
+        Update: Partial<Profile>;
+      };
+      projects: {
+        Row: {
+          id: number;
+          created_at: string;
+          name: string;
+          description: string | null;
+          start_date: string | null;
+          end_date: string | null;
+          budget: number | null;
+          spent: number | null;
+          status: string; // Corresponds to ProjectStatus enum
+          created_by: string;
+        };
+        Insert: Omit<Database['public']['Tables']['projects']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['projects']['Row']>;
+      };
+      tasks: {
+        Row: {
+          id: number;
+          created_at: string;
+          name: string;
+          description: string | null;
+          status: string; // Corresponds to TaskStatus enum
+          due_date: string | null;
+          assignee_id: string | null;
+          project_id: number;
+          percent_complete: number | null;
+        };
+        Insert: Omit<Database['public']['Tables']['tasks']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['tasks']['Row']>;
+      };
+      milestones: {
+        Row: {
+            id: number;
+            created_at: string;
+            name: string;
+            due_date: string;
+            project_id: number;
+            completed: boolean;
+        };
+        Insert: Omit<Database['public']['Tables']['milestones']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['milestones']['Row']>;
+      };
+      project_team_members: {
+        Row: {
+          project_id: number;
+          user_id: string;
+        };
+        Insert: {
+          project_id: number;
+          user_id: string;
+        };
+        Update: never;
+      };
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      [_ in never]: never;
+    };
+    Enums: {
+      project_status: 'Planning' | 'Active' | 'On Hold' | 'Completed';
+      task_status: 'To Do' | 'In Progress' | 'Done';
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
+};
