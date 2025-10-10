@@ -1,8 +1,17 @@
+
+export enum UserRole {
+  ProjectDirector = 'Project Director',
+  ProjectManager = 'Project Manager',
+  AssistantProjectManager = 'Assistant Project Manager',
+  EngineerSupervisor = 'Engineer / Supervisor',
+  SiteEngineerTechnician = 'Site Engineer / Technician',
+}
+
 export interface Profile {
   id: string; // uuid
   full_name: string | null;
   avatar_url: string | null;
-  role: string | null;
+  role: UserRole | null;
 }
 
 export enum ProjectStatus {
@@ -40,11 +49,9 @@ export interface Milestone {
   completed: boolean;
 }
 
+export type MilestoneInsert = Omit<Milestone, 'id' | 'created_at' | 'completed'>;
+
 export interface ProjectTeamMember {
-  // FIX: The query in App.tsx only fetches the profile, not the IDs from the junction table.
-  // This aligns the type with the actual data being returned.
-  // project_id: number;
-  // user_id: string; // uuid
   profile: Profile;
 }
 
@@ -62,7 +69,7 @@ export interface Project {
   tasks: Task[];
   milestones: Milestone[];
   project_team_members: ProjectTeamMember[];
-  teamMembers?: Profile[]; // This seems to be populated client-side.
+  teamMembers?: Profile[]; 
 }
 
 export enum Page {
@@ -71,16 +78,18 @@ export enum Page {
   ProjectDetail = 'project-detail',
 }
 
-
-// FIX: Rewrote the Database type to avoid circular references which caused 'never' type errors.
-// Insert and Update types are now defined explicitly.
 export type Database = {
   public: {
     Tables: {
       profiles: {
         Row: Profile;
         Insert: Omit<Profile, 'id'>;
-        Update: Partial<Profile>;
+        // FIX: Update type now correctly omits the non-updatable 'id' field.
+        Update: {
+          full_name?: string | null;
+          avatar_url?: string | null;
+          role?: UserRole | null;
+        };
       };
       projects: {
         Row: {
@@ -105,18 +114,16 @@ export type Database = {
           spent?: number | null;
           status?: string;
         };
-        Update: Partial<{
-          id: number;
-          created_at: string;
-          name: string;
-          description: string | null;
-          start_date: string | null;
-          end_date: string | null;
-          budget: number | null;
-          spent: number | null;
-          status: string;
-          created_by: string;
-        }>;
+        // FIX: Update type now correctly omits non-updatable fields like 'id', 'created_at', and 'created_by'.
+        Update: {
+          name?: string;
+          description?: string | null;
+          start_date?: string | null;
+          end_date?: string | null;
+          budget?: number | null;
+          spent?: number | null;
+          status?: string;
+        };
       };
       tasks: {
         Row: {
@@ -139,17 +146,15 @@ export type Database = {
           assignee_id?: string | null;
           percent_complete?: number | null;
         };
-        Update: Partial<{
-          id: number;
-          created_at: string;
-          name: string;
-          description: string | null;
-          status: string;
-          due_date: string | null;
-          assignee_id: string | null;
-          project_id: number;
-          percent_complete: number | null;
-        }>;
+        // FIX: Update type now correctly omits non-updatable fields like 'id', 'created_at', and 'project_id'.
+        Update: {
+          name?: string;
+          description?: string | null;
+          status?: string;
+          due_date?: string | null;
+          assignee_id?: string | null;
+          percent_complete?: number | null;
+        };
       };
       milestones: {
         Row: {
@@ -166,14 +171,12 @@ export type Database = {
             project_id: number;
             completed?: boolean;
         };
-        Update: Partial<{
-            id: number;
-            created_at: string;
-            name: string;
-            due_date: string;
-            project_id: number;
-            completed: boolean;
-        }>;
+        // FIX: Update type now correctly omits non-updatable fields like 'id', 'created_at', and 'project_id'.
+        Update: {
+            name?: string;
+            due_date?: string;
+            completed?: boolean;
+        };
       };
       project_team_members: {
         Row: {
@@ -184,7 +187,9 @@ export type Database = {
           project_id: number;
           user_id: string;
         };
-        Update: never;
+        // FIX: Changed 'never' to '{}' to prevent potential issues with Supabase type inference engine.
+        // An empty object indicates no fields are updatable, which is more compatible than 'never'.
+        Update: {};
       };
     };
     Views: {
@@ -194,8 +199,6 @@ export type Database = {
       [_ in never]: never;
     };
     Enums: {
-      // FIX: The schema does not define any enum types; status columns are `text`.
-      // This was causing the Supabase client to fail type inference.
       [_ in never]: never;
     };
     CompositeTypes: {

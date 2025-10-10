@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Page, Project, ProjectStatus, Profile } from '../types';
+import { Page, Project, ProjectStatus, Profile, UserRole } from '../types';
 import Card from './ui/Card';
 import Avatar from './ui/Avatar';
 
@@ -7,6 +8,7 @@ interface ProjectListProps {
   navigateTo: (page: Page, projectId: number) => void;
   projects: Project[];
   onOpenAddProjectModal: () => void;
+  userProfile: Profile | null;
 }
 
 const statusColors: { [key: string]: string } = {
@@ -52,16 +54,18 @@ const ProjectCard: React.FC<{ project: Project; onClick: () => void; }> = ({ pro
     );
 }
 
-const ProjectList: React.FC<ProjectListProps> = ({ navigateTo, projects, onOpenAddProjectModal }) => {
+const ProjectList: React.FC<ProjectListProps> = ({ navigateTo, projects, onOpenAddProjectModal, userProfile }) => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold text-neutral-dark">Projects</h2>
-        <button 
-          onClick={onOpenAddProjectModal}
-          className="bg-brand-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-brand-dark transition-colors">
-          Create New Project
-        </button>
+        {userProfile?.role === UserRole.ProjectDirector && (
+          <button 
+            onClick={onOpenAddProjectModal}
+            className="bg-brand-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-brand-dark transition-colors">
+            Create New Project
+          </button>
+        )}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {projects.map(project => (

@@ -12,6 +12,16 @@ import ProjectDetail from './components/ProjectDetail';
 import AddProjectModal from './components/AddProjectModal';
 import SetupPage from './components/SetupPage';
 
+// FIX: Define a type for the data coming from the AddProjectModal form.
+type NewProjectFormData = {
+  name: string;
+  description: string;
+  start_date: string;
+  end_date: string;
+  budget: number;
+  teamMemberIds: string[];
+};
+
 const App: React.FC = () => {
   const [isSupabaseConfigured, setIsSupabaseConfigured] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
@@ -77,7 +87,8 @@ const App: React.FC = () => {
         
       if (projectsError) throw projectsError;
 
-      const formattedProjects = (projectsData || []).map(p => ({
+      // FIX: Cast p to any to resolve incorrect type inference from complex select query.
+      const formattedProjects = (projectsData || []).map((p: any) => ({
         ...p,
         status: p.status as ProjectStatus,
         teamMembers: p.project_team_members.map((ptm: any) => ptm.profile)
@@ -99,13 +110,15 @@ const App: React.FC = () => {
     }
   }, [session]);
   
-  const handleAddProject = async (projectData: any) => {
+  const handleAddProject = async (projectData: NewProjectFormData) => {
     if (!session?.user) return;
     try {
         // 1. Insert into projects table
+        // FIX: Wrap insert data in an array to resolve Supabase type inference issue.
+        // This ensures `newProject` is correctly typed and subsequent property access (e.g., `newProject.id`) is valid.
         const { data: newProject, error: projectError } = await supabase
             .from('projects')
-            .insert({
+            .insert([{
                 name: projectData.name,
                 description: projectData.description,
                 start_date: projectData.start_date,
@@ -113,21 +126,26 @@ const App: React.FC = () => {
                 budget: projectData.budget,
                 status: ProjectStatus.Planning,
                 created_by: session.user.id,
-            })
+            }])
             .select()
             .single();
 
         if (projectError) throw projectError;
 
-        // FIX: Add null check for newProject to resolve 'possibly null' error.
         if (!newProject) {
             alert("Error adding project: Could not create project record.");
             return;
         }
 
         // 2. Insert into project_team_members table
-        if (projectData.teamMemberIds && projectData.teamMemberIds.length > 0) {
-            const teamMembersData = projectData.teamMemberIds.map((userId: string) => ({
+        // Add the creator to the team by default
+        const creatorId = session.user.id;
+        const finalTeamMemberIds = projectData.teamMemberIds.includes(creatorId)
+            ? projectData.teamMemberIds
+            : [...projectData.teamMemberIds, creatorId];
+
+        if (finalTeamMemberIds && finalTeamMemberIds.length > 0) {
+            const teamMembersData = finalTeamMemberIds.map((userId: string) => ({
                 project_id: newProject.id,
                 user_id: userId,
             }));
@@ -182,9 +200,9 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (currentPage) {
       case Page.Projects:
-        return <ProjectList navigateTo={navigateTo} projects={projects} onOpenAddProjectModal={() => setIsAddProjectModalOpen(true)} />;
+        return <ProjectList userProfile={userProfile} navigateTo={navigateTo} projects={projects} onOpenAddProjectModal={() => setIsAddProjectModalOpen(true)} />;
       case Page.ProjectDetail:
-        return selectedProject ? <ProjectDetail project={selectedProject} onProjectUpdate={handleProjectUpdate} /> : <div>Project not found</div>;
+        return selectedProject ? <ProjectDetail userProfile={userProfile} project={selectedProject} onProjectUpdate={handleProjectUpdate} /> : <div>Project not found</div>;
       case Page.Dashboard:
       default:
         return <Dashboard navigateTo={navigateTo} projects={projects} />;

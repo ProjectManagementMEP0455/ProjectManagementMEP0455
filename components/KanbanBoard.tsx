@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Task, TaskStatus, Profile } from '../types';
+import { Task, TaskStatus, Profile, UserRole } from '../types';
 import Card from './ui/Card';
 import Avatar from './ui/Avatar';
 
@@ -8,6 +9,7 @@ interface KanbanBoardProps {
   onTaskUpdate: (tasks: Task[]) => void;
   onEditTask: (task: Task) => void;
   onAddTask: () => void;
+  userProfile: Profile | null;
 }
 
 const TaskCard: React.FC<{ task: Task; onEdit: () => void; assignee?: Profile | null }> = ({ task, onEdit, assignee }) => {
@@ -41,21 +43,28 @@ const KanbanColumn: React.FC<{
   );
 };
 
-const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskUpdate, onEditTask, onAddTask }) => {
+const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskUpdate, onEditTask, onAddTask, userProfile }) => {
   const columns: TaskStatus[] = [TaskStatus.ToDo, TaskStatus.InProgress, TaskStatus.Done];
 
   const tasksByStatus = (status: TaskStatus) => tasks.filter(task => task.status === status);
+  
+  const canAddTask = userProfile?.role !== UserRole.SiteEngineerTechnician;
 
   return (
     <Card>
         <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-semibold text-neutral-dark">Task Board</h3>
-            <button onClick={onAddTask} className="bg-brand-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-brand-dark transition-colors">
-                Add Task
-            </button>
+            {canAddTask && (
+                <button onClick={onAddTask} className="bg-brand-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-brand-dark transition-colors">
+                    Add Task
+                </button>
+            )}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {columns.map(status => (
+                // FIX: Correctly pass `status` and `tasks` props to KanbanColumn.
+                // The `status` prop requires the status enum value, not the array of tasks.
+                // The `tasks` prop was missing and is now supplied with the filtered tasks.
                 <KanbanColumn
                     key={status}
                     status={status}
