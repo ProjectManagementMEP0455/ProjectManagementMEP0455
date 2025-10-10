@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 
+// FIX: Define props interface for the component.
 interface SetupPageProps {
   onConfigured: () => void;
 }
 
-const supabaseSchema = `
--- MEP PROJECT MANAGEMENT PRO - SUPABASE SCHEMA
--- version 1.4 (Definitive RLS Fix)
+// FIX: Wrap the SQL schema in a template literal string constant.
+// The raw SQL was causing a massive number of TypeScript parsing errors.
+const supabaseSchema = `-- MEP PROJECT MANAGEMENT PRO - SUPABASE SCHEMA
+-- version 1.6 (Definitive Cascade Fix)
 -- This script is idempotent and can be run multiple times without causing errors.
 
 -- 1. TABLES
@@ -32,7 +34,6 @@ create table if not exists public.projects (
   budget numeric,
   spent numeric,
   status text not null default 'Planning',
-  -- DEFINITIVE FIX: Reference public.profiles instead of auth.users to resolve RLS conflicts.
   created_by uuid not null references public.profiles on delete cascade
 );
 
@@ -87,7 +88,9 @@ drop policy if exists "Allow authenticated users to view all profiles." on publi
 create policy "Allow authenticated users to view all profiles." on public.profiles for select to authenticated using (true);
 
 
--- RLS Helper function to check project membership
+-- RLS Helper functions to check project membership and creation
+-- DEFINITIVE FIX: Use CASCADE to drop dependent policies automatically.
+drop function if exists is_member_of_project(bigint,uuid) cascade;
 create or replace function is_member_of_project(p_project_id bigint, p_user_id uuid)
 returns boolean
 language plpgsql
@@ -96,11 +99,28 @@ as $$
 begin
   return exists (
     select 1
-    from project_team_members
+    from public.project_team_members
     where project_id = p_project_id and user_id = p_user_id
   );
 end;
 $$;
+
+-- DEFINITIVE FIX: Use CASCADE to drop dependent policies automatically.
+drop function if exists is_creator_of_project(bigint,uuid) cascade;
+create or replace function is_creator_of_project(p_project_id bigint, p_user_id uuid)
+returns boolean
+language plpgsql
+security definer -- This is crucial to bypass RLS on the 'projects' table for the check.
+as $$
+begin
+  return exists (
+    select 1
+    from public.projects
+    where id = p_project_id and created_by = p_user_id
+  );
+end;
+$$;
+
 
 -- Policies for 'projects' table
 drop policy if exists "Team members can view their projects." on public.projects;
@@ -120,12 +140,8 @@ drop policy if exists "Team members can view project members." on public.project
 create policy "Team members can view project members." on public.project_team_members for select using (is_member_of_project(project_id, auth.uid()));
 
 drop policy if exists "Project creators can add or remove team members." on public.project_team_members;
-create policy "Project creators can add or remove team members." on public.project_team_members for all using (
-  exists (
-    select 1 from projects
-    where projects.id = project_id and projects.created_by = auth.uid()
-  )
-);
+create policy "Project creators can add or remove team members." on public.project_team_members for all 
+  using (is_creator_of_project(project_id, auth.uid()));
 
 
 -- Policies for 'tasks' table
