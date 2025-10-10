@@ -11,6 +11,12 @@ import SetupPage from './components/SetupPage';
 import { Page, Project, ProjectStatus, Task, Profile } from './types';
 import { supabase } from './lib/supabaseClient';
 
+// This is the data structure we expect from the AddProjectModal form
+type NewProjectFormData = Omit<Project, 'id' | 'status' | 'spent' | 'milestones' | 'tasks' | 'teamMembers' | 'created_at' | 'project_team_members' | 'created_by'> & {
+  teamMemberIds: string[];
+};
+
+
 const App: React.FC = () => {
   const [isConfigured, setIsConfigured] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
@@ -103,21 +109,40 @@ const App: React.FC = () => {
     setCurrentProjectId(projectId || null);
   };
 
-  const handleAddProject = async (newProjectData: Omit<Project, 'id' | 'status' | 'spent' | 'milestones' | 'tasks' | 'teamMembers' | 'created_at' | 'project_team_members' | 'created_by'>) => {
+  const handleAddProject = async (newProjectData: NewProjectFormData) => {
     if (!session?.user) return;
     
     try {
-      // Create project first
+      const { teamMemberIds, ...projectDetails } = newProjectData;
+      
+      // 1. Create the project
       const { data: newProject, error: projectError } = await supabase
         .from('projects')
-        .insert({ ...newProjectData, created_by: session.user.id })
+        .insert({ ...projectDetails, created_by: session.user.id })
         .select()
         .single();
 
       if (projectError) throw projectError;
       
-      // The trigger 'on_project_created' automatically adds the creator to the team.
-      // Now, re-fetch all projects to get the updated list with all relationships.
+      // 2. Add selected team members (the trigger handles the creator)
+      if (teamMemberIds && teamMemberIds.length > 0) {
+        const membersToInsert = teamMemberIds
+          .filter(id => id !== session.user.id) // DB trigger handles the creator
+          .map(userId => ({
+            project_id: newProject.id,
+            user_id: userId,
+          }));
+
+        if (membersToInsert.length > 0) {
+          const { error: teamError } = await supabase
+            .from('project_team_members')
+            .insert(membersToInsert);
+          
+          if (teamError) throw teamError;
+        }
+      }
+      
+      // 3. Re-fetch all projects to get the updated list with all relationships.
       await fetchProjects();
       setIsAddProjectModalOpen(false);
       navigateTo(Page.Projects);
@@ -134,9 +159,6 @@ const App: React.FC = () => {
   }
 
   const handleConfigured = () => {
-    // This function is called from the SetupPage after credentials are saved.
-    // Reloading the page is the simplest way to re-initialize the Supabase client
-    // and the entire app state with the new credentials.
     window.location.reload();
   };
 
