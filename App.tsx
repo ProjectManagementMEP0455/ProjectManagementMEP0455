@@ -118,7 +118,11 @@ const App: React.FC = () => {
       // 1. Create the project
       const { data: newProject, error: projectError } = await supabase
         .from('projects')
-        .insert({ ...projectDetails, created_by: session.user.id })
+        .insert({ 
+          ...projectDetails, 
+          status: ProjectStatus.Planning, // Explicitly set status
+          created_by: session.user.id 
+        })
         .select()
         .single();
 

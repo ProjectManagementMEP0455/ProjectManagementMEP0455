@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 // The SQL schema is included here directly to avoid file loading complexities.
 const sqlSchema = `-- MEP PROJECT MANAGEMENT PRO - SUPABASE SCHEMA
--- version 1.1 (Idempotent)
+-- version 1.2 (Idempotent)
 -- This script can be run multiple times without causing errors.
 
 -- 1. TABLES
@@ -113,6 +113,15 @@ create policy "Project creator can delete their project." on public.projects for
 -- Policies for 'project_team_members' table
 drop policy if exists "Team members can view project members." on public.project_team_members;
 create policy "Team members can view project members." on public.project_team_members for select using (is_member_of_project(project_id, auth.uid()));
+
+drop policy if exists "Project creators can add team members." on public.project_team_members;
+create policy "Project creators can add team members." on public.project_team_members for insert with check (
+  exists (
+    select 1 from projects
+    where projects.id = project_id and projects.created_by = auth.uid()
+  )
+);
+
 
 -- Policies for 'tasks' table
 drop policy if exists "Team members can view tasks." on public.tasks;
