@@ -1,13 +1,13 @@
 import React, { useState, FormEvent, useEffect } from 'react';
-import { Task, TaskStatus, User } from '../types';
+import { Task, TaskStatus, Profile } from '../types';
 
-type NewTaskData = Omit<Task, 'id'>;
+type NewTaskData = Omit<Task, 'id' | 'created_at' | 'project_id'>;
 
 interface AddTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddTask: (taskData: NewTaskData) => void;
-  teamMembers: User[];
+  teamMembers: Profile[];
 }
 
 const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask, teamMembers }) => {
@@ -18,7 +18,6 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask,
 
   useEffect(() => {
     if (isOpen) {
-      // Reset form when modal opens
       setName('');
       setDescription('');
       setAssigneeId(null);
@@ -37,8 +36,9 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask,
       name,
       description,
       status: TaskStatus.ToDo,
-      assigneeId,
-      dueDate,
+      assignee_id: assigneeId,
+      due_date: dueDate,
+      percent_complete: 0,
     });
   };
 
@@ -83,7 +83,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask,
               >
                 <option value="">Unassigned</option>
                 {teamMembers.map(user => (
-                  <option key={user.id} value={user.id}>{user.name}</option>
+                  <option key={user.id} value={user.id}>{user.full_name}</option>
                 ))}
               </select>
             </div>

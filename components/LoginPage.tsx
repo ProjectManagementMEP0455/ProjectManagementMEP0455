@@ -1,43 +1,111 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
-interface LoginPageProps {
-  onLogin: () => void;
-}
+const LoginPage: React.FC = () => {
+  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
 
-const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
+  const handleAuth = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+              avatar_url: `https://i.pravatar.cc/150?u=${email}` // Default avatar
+            }
+          }
+        });
+        if (error) throw error;
+        setMessage('Check your email for the login link!');
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) throw error;
+      }
+    } catch (error: any) {
+      setError(error.error_description || error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="p-8 bg-white rounded-lg shadow-md w-full max-w-sm">
         <h1 className="text-3xl font-bold text-center text-brand-primary mb-2">MEP-Dash</h1>
-        <p className="text-center text-neutral-medium mb-8">Project Management for MEP Engineers</p>
-        <div className="space-y-4">
+        <p className="text-center text-neutral-medium mb-6">Project Management for MEP Engineers</p>
+        
+        <div className="flex border-b mb-6">
+          <button onClick={() => {setIsSignUp(false); setError(null);}} className={`w-1/2 py-2 font-semibold ${!isSignUp ? 'border-b-2 border-brand-primary text-brand-primary' : 'text-neutral-medium'}`}>
+            Sign In
+          </button>
+          <button onClick={() => {setIsSignUp(true); setError(null);}} className={`w-1/2 py-2 font-semibold ${isSignUp ? 'border-b-2 border-brand-primary text-brand-primary' : 'text-neutral-medium'}`}>
+            Sign Up
+          </button>
+        </div>
+
+        {error && <p className="bg-red-100 text-red-700 p-3 rounded-md mb-4 text-center text-sm">{error}</p>}
+        {message && <p className="bg-green-100 text-green-700 p-3 rounded-md mb-4 text-center text-sm">{message}</p>}
+
+        <form onSubmit={handleAuth} className="space-y-4">
+          {isSignUp && (
+            <div>
+              <label className="text-sm font-medium text-neutral-medium" htmlFor="fullName">Full Name</label>
+              <input
+                id="fullName"
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
+                required
+              />
+            </div>
+          )}
           <div>
             <label className="text-sm font-medium text-neutral-medium" htmlFor="email">Email</label>
-            <input 
-                id="email" 
-                type="email" 
-                defaultValue="alice@mep-dash.com" 
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-brand-primary focus:border-brand-primary" 
-                readOnly
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
+              required
             />
           </div>
           <div>
             <label className="text-sm font-medium text-neutral-medium" htmlFor="password">Password</label>
-            <input 
-                id="password" 
-                type="password" 
-                defaultValue="password" 
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-brand-primary focus:border-brand-primary" 
-                readOnly
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
+              required
             />
           </div>
           <button
-            onClick={onLogin}
-            className="w-full bg-brand-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-brand-dark transition-colors"
+            type="submit"
+            disabled={loading}
+            className="w-full bg-brand-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-50"
           >
-            Log In
+            {loading ? 'Processing...' : (isSignUp ? 'Sign Up' : 'Sign In')}
           </button>
-        </div>
+        </form>
       </div>
     </div>
   );

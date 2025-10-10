@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { Project, ProjectStatus, Task, User } from '../types';
-import { MOCK_USERS } from '../constants';
+import React, { useState, useEffect } from 'react';
+import { Project, ProjectStatus, Task, Profile } from '../types';
 import Card from './ui/Card';
 import Avatar from './ui/Avatar';
 import KanbanBoard from './KanbanBoard';
@@ -8,49 +7,77 @@ import GanttChart from './GanttChart';
 import MilestonesView from './MilestonesView';
 import AddTaskModal from './AddTaskModal';
 import EditTaskModal from './EditTaskModal';
+import { supabase } from '../lib/supabaseClient';
 
 type ProjectDetailView = 'overview' | 'tasks' | 'gantt' | 'milestones';
 
 interface ProjectDetailProps {
     project: Project;
-    onTasksUpdate: (projectId: string, tasks: Task[]) => void;
+    onProjectUpdate: (project: Project) => void;
 }
 
-const ProjectDetail: React.FC<ProjectDetailProps> = ({ project: initialProject, onTasksUpdate }) => {
+const ProjectDetail: React.FC<ProjectDetailProps> = ({ project: initialProject, onProjectUpdate }) => {
   const [project, setProject] = useState<Project>(initialProject);
   const [activeView, setActiveView] = useState<ProjectDetailView>('overview');
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
-  const teamMembers = MOCK_USERS.filter(user => project.teamMemberIds.includes(user.id));
-  const progress = project.budget > 0 ? (project.spent / project.budget) * 100 : 0;
-  
-  const handleTaskUpdate = (updatedTasks: Task[]) => {
-      setProject(prev => ({...prev, tasks: updatedTasks}));
-      onTasksUpdate(project.id, updatedTasks);
-  };
+  useEffect(() => {
+    setProject(initialProject);
+  }, [initialProject]);
 
-  const handleAddTask = (newTaskData: Omit<Task, 'id'>) => {
-    const newTask: Task = {
-      ...newTaskData,
-      id: `t${project.id}-${project.tasks.length + 1}`,
-    };
-    const updatedTasks = [...project.tasks, newTask];
-    setProject(prev => ({ ...prev, tasks: updatedTasks}));
-    onTasksUpdate(project.id, updatedTasks);
-    setIsAddTaskModalOpen(false);
+  const teamMembers = project.teamMembers || [];
+  const progress = (project.budget || 0) > 0 ? ((project.spent || 0) / (project.budget || 1)) * 100 : 0;
+  
+  const handleAddTask = async (newTaskData: Omit<Task, 'id' | 'created_at' | 'project_id'>) => {
+    try {
+        const { data: newTask, error } = await supabase
+            .from('tasks')
+            .insert({ ...newTaskData, project_id: project.id })
+            .select()
+            .single();
+
+        if (error) throw error;
+        
+        const updatedTasks = [...project.tasks, newTask];
+        const updatedProject = { ...project, tasks: updatedTasks };
+        setProject(updatedProject);
+        onProjectUpdate(updatedProject);
+        setIsAddTaskModalOpen(false);
+
+    } catch (error: any) {
+        alert("Error adding task: " + error.message);
+    }
   };
   
-  const handleEditTask = (updatedTask: Task) => {
-    const updatedTasks = project.tasks.map(task => task.id === updatedTask.id ? updatedTask : task);
-    setProject(prev => ({
-        ...prev,
-        tasks: updatedTasks
-    }));
-    onTasksUpdate(project.id, updatedTasks);
-    setIsEditTaskModalOpen(false);
-    setSelectedTask(null);
+  const handleEditTask = async (updatedTask: Task) => {
+    try {
+        const { data, error } = await supabase
+            .from('tasks')
+            .update({
+                name: updatedTask.name,
+                description: updatedTask.description,
+                status: updatedTask.status,
+                assignee_id: updatedTask.assignee_id,
+                due_date: updatedTask.due_date,
+                percent_complete: updatedTask.percent_complete
+            })
+            .eq('id', updatedTask.id)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        const updatedTasks = project.tasks.map(task => task.id === data.id ? data : task);
+        const updatedProject = { ...project, tasks: updatedTasks };
+        setProject(updatedProject);
+        onProjectUpdate(updatedProject);
+        setIsEditTaskModalOpen(false);
+        setSelectedTask(null);
+    } catch (error: any) {
+        alert("Error updating task: " + error.message);
+    }
   };
 
   const openEditModal = (task: Task) => {
@@ -61,9 +88,9 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project: initialProject, 
   const renderView = () => {
     switch (activeView) {
       case 'tasks':
-        return <KanbanBoard tasks={project.tasks} onTaskUpdate={handleTaskUpdate} onEditTask={openEditModal} onAddTask={() => setIsAddTaskModalOpen(true)} />;
+        return <KanbanBoard tasks={project.tasks} onTaskUpdate={() => {}} onEditTask={openEditModal} onAddTask={() => setIsAddTaskModalOpen(true)} />;
       case 'gantt':
-        return <GanttChart tasks={project.tasks} projectStartDate={project.startDate} projectEndDate={project.endDate} />;
+        return <GanttChart tasks={project.tasks} projectStartDate={project.start_date || ''} projectEndDate={project.end_date || ''} />;
       case 'milestones':
           return <MilestonesView milestones={project.milestones} />;
       case 'overview':
@@ -72,7 +99,8 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project: initialProject, 
     }
   };
   
-  const formatCurrencyINR = (value: number) => {
+  const formatCurrencyINR = (value: number | null) => {
+    if (value === null) return '₹0';
     if (value >= 10000000) return `₹${(value / 10000000).toFixed(2)} Cr`;
     if (value >= 100000) return `₹${(value / 100000).toFixed(2)} L`;
     return `₹${new Intl.NumberFormat('en-IN').format(value)}`;
@@ -111,12 +139,12 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project: initialProject, 
             <Card>
                 <h3 className="text-xl font-semibold mb-4 text-neutral-dark">Team Members</h3>
                 <ul className="space-y-3">
-                    {teamMembers.map(user => (
-                        <li key={user.id} className="flex items-center space-x-3">
-                            <Avatar user={user} size="md" />
+                    {teamMembers.map((profile: Profile) => (
+                        <li key={profile.id} className="flex items-center space-x-3">
+                            <Avatar profile={profile} size="md" />
                             <div>
-                                <p className="font-semibold text-neutral-dark">{user.name}</p>
-                                <p className="text-sm text-neutral-medium">{user.role}</p>
+                                <p className="font-semibold text-neutral-dark">{profile.full_name}</p>
+                                <p className="text-sm text-neutral-medium">{profile.role}</p>
                             </div>
                         </li>
                     ))}
@@ -132,7 +160,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project: initialProject, 
         <div>
           <h2 className="text-3xl font-bold text-neutral-dark">{project.name}</h2>
           <p className="text-neutral-medium">
-            {new Date(project.startDate).toLocaleDateString()} - {new Date(project.endDate).toLocaleDateString()}
+            {project.start_date ? new Date(project.start_date).toLocaleDateString() : 'N/A'} - {project.end_date ? new Date(project.end_date).toLocaleDateString() : 'N/A'}
           </p>
         </div>
         <div className="flex items-center bg-gray-200 rounded-lg p-1">

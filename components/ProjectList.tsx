@@ -1,16 +1,15 @@
 import React from 'react';
-import { Page, Project, ProjectStatus } from '../types';
-import { MOCK_USERS } from '../constants';
+import { Page, Project, ProjectStatus, Profile } from '../types';
 import Card from './ui/Card';
 import Avatar from './ui/Avatar';
 
 interface ProjectListProps {
-  navigateTo: (page: Page, projectId: string) => void;
+  navigateTo: (page: Page, projectId: number) => void;
   projects: Project[];
   onOpenAddProjectModal: () => void;
 }
 
-const statusColors: { [key in ProjectStatus]: string } = {
+const statusColors: { [key: string]: string } = {
   [ProjectStatus.Active]: 'bg-status-blue text-white',
   [ProjectStatus.Planning]: 'bg-status-yellow text-neutral-dark',
   [ProjectStatus.Completed]: 'bg-status-green text-white',
@@ -18,8 +17,10 @@ const statusColors: { [key in ProjectStatus]: string } = {
 };
 
 const ProjectCard: React.FC<{ project: Project; onClick: () => void; }> = ({ project, onClick }) => {
-    const progress = project.budget > 0 ? (project.spent / project.budget) * 100 : 0;
-    const teamMembers = MOCK_USERS.filter(user => project.teamMemberIds.includes(user.id));
+    const budget = project.budget || 0;
+    const spent = project.spent || 0;
+    const progress = budget > 0 ? (spent / budget) * 100 : 0;
+    const teamMembers = project.teamMembers || [];
 
     return (
         <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={onClick}>
@@ -41,10 +42,10 @@ const ProjectCard: React.FC<{ project: Project; onClick: () => void; }> = ({ pro
 
             <div className="flex justify-between items-center text-sm">
                 <div className="text-neutral-medium">
-                    <span className="font-semibold">End Date:</span> {new Date(project.endDate).toLocaleDateString()}
+                    <span className="font-semibold">End Date:</span> {project.end_date ? new Date(project.end_date).toLocaleDateString() : 'N/A'}
                 </div>
                  <div className="flex -space-x-2">
-                    {teamMembers.map(user => <Avatar key={user.id} user={user} size="md" />)}
+                    {teamMembers.map((profile: Profile) => <Avatar key={profile.id} profile={profile} size="md" />)}
                  </div>
             </div>
         </Card>

@@ -1,9 +1,8 @@
 import React, { useState, FormEvent, useEffect } from 'react';
-import { Project, ProjectStatus } from '../types';
-import { MOCK_USERS } from '../constants';
+import { Project, Profile } from '../types';
+import { supabase } from '../lib/supabaseClient';
 
-// Use Omit to create a type for the new project data from the form
-type NewProjectData = Omit<Project, 'id' | 'status' | 'spent' | 'milestones' | 'tasks'>;
+type NewProjectData = Omit<Project, 'id' | 'status' | 'spent' | 'milestones' | 'tasks' | 'teamMembers' | 'created_at' | 'project_team_members' | 'created_by'>;
 
 interface AddProjectModalProps {
   isOpen: boolean;
@@ -14,18 +13,16 @@ interface AddProjectModalProps {
 const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClose, onAddProject }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [teamMemberIds, setTeamMemberIds] = useState<string[]>([]);
+  // Team member IDs are handled by a DB trigger, so we don't need state for them here.
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [budget, setBudget] = useState(0);
 
   useEffect(() => {
     if (isOpen) {
-      // Reset form when modal opens
       const today = new Date().toISOString().split('T')[0];
       setName('');
       setDescription('');
-      setTeamMemberIds([]);
       setStartDate(today);
       setEndDate('');
       setBudget(0);
@@ -46,17 +43,10 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClose, onAd
     onAddProject({
       name,
       description,
-      startDate,
-      endDate,
+      start_date: startDate,
+      end_date: endDate,
       budget,
-      teamMemberIds,
     });
-  };
-  
-  const handleTeamMemberChange = (userId: string) => {
-    setTeamMemberIds(prev => 
-      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
-    );
   };
 
   if (!isOpen) {
@@ -126,23 +116,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClose, onAd
               min="0"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-neutral-medium">Assign Team Members</label>
-            <div className="mt-2 grid grid-cols-2 md:grid-cols-3 gap-2 border p-2 rounded-md max-h-32 overflow-y-auto">
-              {MOCK_USERS.map(user => (
-                <div key={user.id} className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id={`project-user-${user.id}`}
-                    checked={teamMemberIds.includes(user.id)}
-                    onChange={() => handleTeamMemberChange(user.id)}
-                    className="h-4 w-4 text-brand-primary border-gray-300 rounded focus:ring-brand-primary"
-                  />
-                  <label htmlFor={`project-user-${user.id}`} className="ml-3 text-sm text-neutral-dark">{user.name}</label>
-                </div>
-              ))}
-            </div>
-          </div>
+           {/* Team member assignment can be a future enhancement. For now, the creator is auto-added. */}
           <div className="flex justify-end space-x-4 pt-4">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-neutral-dark bg-gray-200 rounded-md hover:bg-gray-300 transition-colors">
               Cancel

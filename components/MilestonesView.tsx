@@ -7,7 +7,7 @@ interface MilestonesViewProps {
 }
 
 const MilestonesView: React.FC<MilestonesViewProps> = ({ milestones }) => {
-    if (milestones.length === 0) {
+    if (!milestones || milestones.length === 0) {
         return (
             <Card>
                 <h3 className="text-xl font-semibold text-neutral-dark mb-4">Project Milestones</h3>
@@ -26,7 +26,7 @@ const MilestonesView: React.FC<MilestonesViewProps> = ({ milestones }) => {
                            {milestone.completed && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
                         </div>
                         <p className={`font-semibold text-lg ${milestone.completed ? 'text-neutral-dark' : 'text-brand-primary'}`}>{milestone.name}</p>
-                        <p className="text-neutral-medium">Due: {new Date(milestone.dueDate).toLocaleDateString()}</p>
+                        <p className="text-neutral-medium">Due: {new Date(milestone.due_date).toLocaleDateString()}</p>
                         <p className={`text-sm font-bold ${milestone.completed ? 'text-status-green' : 'text-status-yellow'}`}>
                             {milestone.completed ? 'Completed' : 'Pending'}
                         </p>

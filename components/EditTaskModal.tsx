@@ -1,28 +1,30 @@
 import React, { useState, FormEvent, useEffect } from 'react';
-import { Task, TaskStatus, User } from '../types';
+import { Task, TaskStatus, Profile } from '../types';
 
 interface EditTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   onEditTask: (task: Task) => void;
   task: Task;
-  teamMembers: User[];
+  teamMembers: Profile[];
 }
 
 const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onEditTask, task, teamMembers }) => {
-  const [name, setName] = useState(task.name);
-  const [description, setDescription] = useState(task.description);
-  const [assigneeId, setAssigneeId] = useState<string | null>(task.assigneeId);
-  const [dueDate, setDueDate] = useState(task.dueDate);
-  const [status, setStatus] = useState<TaskStatus>(task.status);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [assigneeId, setAssigneeId] = useState<string | null>(null);
+  const [dueDate, setDueDate] = useState('');
+  const [status, setStatus] = useState<TaskStatus>(TaskStatus.ToDo);
+  const [percentComplete, setPercentComplete] = useState(0);
 
   useEffect(() => {
     if (task) {
         setName(task.name);
-        setDescription(task.description);
-        setAssigneeId(task.assigneeId);
-        setDueDate(task.dueDate);
-        setStatus(task.status);
+        setDescription(task.description || '');
+        setAssigneeId(task.assignee_id);
+        setDueDate(task.due_date || '');
+        setStatus(task.status as TaskStatus);
+        setPercentComplete(task.percent_complete || 0);
     }
   }, [task, isOpen]);
   
@@ -38,8 +40,9 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onEditTa
       name,
       description,
       status,
-      assigneeId,
-      dueDate,
+      assignee_id: assigneeId,
+      due_date: dueDate,
+      percent_complete: percentComplete,
     });
   };
 
@@ -49,7 +52,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onEditTa
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-lg">
+      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-bold text-neutral-dark mb-6">Edit Task</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -84,7 +87,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onEditTa
               >
                 <option value="">Unassigned</option>
                 {teamMembers.map(user => (
-                  <option key={user.id} value={user.id}>{user.name}</option>
+                  <option key={user.id} value={user.id}>{user.full_name}</option>
                 ))}
               </select>
             </div>
@@ -100,7 +103,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onEditTa
               />
             </div>
           </div>
-          <div>
+           <div>
             <label htmlFor="editTaskStatus" className="block text-sm font-medium text-neutral-medium">Status</label>
             <select
               id="editTaskStatus"
@@ -110,6 +113,20 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onEditTa
             >
               {Object.values(TaskStatus).map(s => <option key={s} value={s}>{s}</option>)}
             </select>
+          </div>
+           <div>
+            <label htmlFor="editTaskPercent" className="block text-sm font-medium text-neutral-medium">Percent Complete</label>
+             <input
+              type="range"
+              id="editTaskPercent"
+              min="0"
+              max="100"
+              step="5"
+              value={percentComplete}
+              onChange={(e) => setPercentComplete(Number(e.target.value))}
+              className="mt-1 block w-full"
+            />
+            <div className="text-center text-sm text-neutral-medium">{percentComplete}%</div>
           </div>
           <div className="flex justify-end space-x-4 pt-4">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-neutral-dark bg-gray-200 rounded-md hover:bg-gray-300 transition-colors">

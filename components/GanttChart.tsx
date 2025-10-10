@@ -9,13 +9,23 @@ interface GanttChartProps {
 }
 
 const GanttChart: React.FC<GanttChartProps> = ({ tasks, projectStartDate, projectEndDate }) => {
+  if (!projectStartDate || !projectEndDate) {
+    return (
+        <Card>
+            <h3 className="text-xl font-semibold text-neutral-dark">Project Timeline (Gantt Chart)</h3>
+            <p className="text-neutral-medium text-center py-4">Project start and end dates must be set to display the timeline.</p>
+        </Card>
+    );
+  }
+  
   const startDate = new Date(projectStartDate);
   const endDate = new Date(projectEndDate);
   const totalDays = Math.max(1, (endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
 
   const getTaskPosition = (task: Task) => {
-    // Simplified: using due date as end point and assuming a fixed duration
-    const taskEnd = new Date(task.dueDate); 
+    if (!task.due_date) return { left: '0%', width: '0%' };
+    
+    const taskEnd = new Date(task.due_date); 
     const taskDurationDays = 14; 
     const taskStart = new Date(taskEnd.getTime() - taskDurationDays * 1000 * 3600 * 24);
 
@@ -66,7 +76,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks, projectStartDate, projec
               <div
                 className="absolute bg-brand-primary h-6 rounded-full flex items-center justify-start pl-2"
                 style={getTaskPosition(task)}
-                title={`${task.name} (Due: ${task.dueDate})`}
+                title={`${task.name} (Due: ${task.due_date})`}
               >
               </div>
             </div>

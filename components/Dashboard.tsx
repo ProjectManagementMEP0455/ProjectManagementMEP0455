@@ -1,29 +1,25 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import Card from './ui/Card';
-import { MOCK_USERS } from '../constants';
-import { Page, Project, ProjectStatus } from '../types';
+import { Page, Profile, Project, ProjectStatus } from '../types';
 import Avatar from './ui/Avatar';
 
 interface DashboardProps {
-  navigateTo: (page: Page, projectId?: string) => void;
+  navigateTo: (page: Page, projectId?: number) => void;
   projects: Project[];
 }
 
-const formatCurrencyINR = (value: number) => {
-  if (value >= 10000000) { // 1 Crore
-      return `₹${(value / 10000000).toFixed(2)} Cr`;
-  }
-  if (value >= 100000) { // 1 Lakh
-      return `₹${(value / 100000).toFixed(2)} L`;
-  }
+const formatCurrencyINR = (value: number | null | undefined) => {
+  if (value === null || value === undefined) return '₹0';
+  if (value >= 10000000) return `₹${(value / 10000000).toFixed(2)} Cr`;
+  if (value >= 100000) return `₹${(value / 100000).toFixed(2)} L`;
   return `₹${new Intl.NumberFormat('en-IN').format(value)}`;
 };
 
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-        const budget = payload.find(p => p.dataKey === 'budget')?.value;
-        const spent = payload.find(p => p.dataKey === 'spent')?.value;
+        const budget = payload.find(p => p.dataKey === 'budget')?.value ?? 0;
+        const spent = payload.find(p => p.dataKey === 'spent')?.value ?? 0;
         const overBudget = spent > budget;
         const difference = Math.abs(spent - budget);
 
@@ -61,9 +57,12 @@ const renderLegend = () => (
 );
 
 const Dashboard: React.FC<DashboardProps> = ({ navigateTo, projects }) => {
+  if (!projects) {
+    return <div>Loading projects...</div>;
+  }
   const activeProjects = projects.filter(p => p.status === ProjectStatus.Active);
-  const totalBudget = projects.reduce((sum, p) => sum + p.budget, 0);
-  const totalSpent = projects.reduce((sum, p) => sum + p.spent, 0);
+  const totalBudget = projects.reduce((sum, p) => sum + (p.budget || 0), 0);
+  const totalSpent = projects.reduce((sum, p) => sum + (p.spent || 0), 0);
 
   const projectStatusData = [
     { name: 'Active', value: projects.filter(p => p.status === 'Active').length, color: '#0065FF' },
@@ -86,8 +85,6 @@ const Dashboard: React.FC<DashboardProps> = ({ navigateTo, projects }) => {
     {name: 'May', tasks: 70, resources: 9},
     {name: 'Jun', tasks: 85, resources: 10},
 ];
-
- const downtownProject = projects.find(p => p.id === 'p1');
 
   return (
     <div className="space-y-6">
@@ -127,7 +124,7 @@ const Dashboard: React.FC<DashboardProps> = ({ navigateTo, projects }) => {
               <Bar dataKey="budget" fill="#4C9AFF" />
               <Bar dataKey="spent">
                  {budgetData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.spent > entry.budget ? '#FF5630' : '#36B37E'} />
+                    <Cell key={`cell-${index}`} fill={(entry.spent || 0) > (entry.budget || 0) ? '#FF5630' : '#36B37E'} />
                 ))}
               </Bar>
             </BarChart>
@@ -165,31 +162,6 @@ const Dashboard: React.FC<DashboardProps> = ({ navigateTo, projects }) => {
                 </ResponsiveContainer>
             </Card>
         </div>
-
-      {/* Recent Activity */}
-      <Card>
-        <h3 className="text-xl font-semibold mb-4 text-neutral-dark">Recent Activity</h3>
-        <ul className="space-y-4">
-          <li className="flex items-center space-x-4">
-            <Avatar user={MOCK_USERS[0]} />
-            <div>
-              <p className="text-neutral-dark">
-                <span className="font-semibold">{MOCK_USERS[0].name}</span> updated task <span className="text-brand-primary font-medium">"Install new rooftop chiller unit"</span> in project {downtownProject ? <span className="text-brand-primary font-medium cursor-pointer" onClick={() => navigateTo(Page.ProjectDetail, downtownProject.id)}>{downtownProject.name}</span> : null}.
-              </p>
-              <p className="text-sm text-neutral-medium">2 hours ago</p>
-            </div>
-          </li>
-          <li className="flex items-center space-x-4">
-            <Avatar user={MOCK_USERS[1]} />
-            <div>
-              <p className="text-neutral-dark">
-                <span className="font-semibold">{MOCK_USERS[1].name}</span> completed milestone <span className="text-status-green font-medium">"Design Approval"</span> on {downtownProject ? <span className="text-brand-primary font-medium cursor-pointer" onClick={() => navigateTo(Page.ProjectDetail, downtownProject.id)}>{downtownProject.name}</span> : null}.
-              </p>
-              <p className="text-sm text-neutral-medium">1 day ago</p>
-            </div>
-          </li>
-        </ul>
-      </Card>
     </div>
   );
 };

@@ -1,6 +1,5 @@
 import React from 'react';
-import { Task, TaskStatus, User } from '../types';
-import { MOCK_USERS } from '../constants';
+import { Task, TaskStatus, Profile } from '../types';
 import Card from './ui/Card';
 import Avatar from './ui/Avatar';
 
@@ -11,18 +10,16 @@ interface KanbanBoardProps {
   onAddTask: () => void;
 }
 
-const TaskCard: React.FC<{ task: Task, onEdit: () => void }> = ({ task, onEdit }) => {
-  const assignee = MOCK_USERS.find(u => u.id === task.assigneeId);
-  
+const TaskCard: React.FC<{ task: Task; onEdit: () => void; assignee?: Profile | null }> = ({ task, onEdit, assignee }) => {
   return (
     <Card className="mb-4 p-4 cursor-pointer hover:shadow-md" onClick={onEdit}>
       <p className="font-semibold text-neutral-dark mb-2">{task.name}</p>
       {assignee && (
         <div className="flex items-center justify-end">
-            <Avatar user={assignee} size="sm" />
+            <Avatar profile={assignee} size="sm" />
         </div>
       )}
-      <p className="text-sm text-neutral-medium mt-1">Due: {new Date(task.dueDate).toLocaleDateString()}</p>
+      <p className="text-sm text-neutral-medium mt-1">Due: {task.due_date ? new Date(task.due_date).toLocaleDateString() : 'N/A'}</p>
     </Card>
   );
 };
