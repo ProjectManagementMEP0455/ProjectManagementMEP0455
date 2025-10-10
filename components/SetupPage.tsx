@@ -6,8 +6,8 @@ interface SetupPageProps {
 
 const supabaseSchema = `
 -- MEP PROJECT MANAGEMENT PRO - SUPABASE SCHEMA
--- version 1.3 (Idempotent, Trigger Removed)
--- This script can be run multiple times without causing errors.
+-- version 1.4 (Definitive RLS Fix)
+-- This script is idempotent and can be run multiple times without causing errors.
 
 -- 1. TABLES
 -- Create a table for public profiles if it doesn't exist
@@ -32,7 +32,8 @@ create table if not exists public.projects (
   budget numeric,
   spent numeric,
   status text not null default 'Planning',
-  created_by uuid not null references auth.users on delete cascade
+  -- DEFINITIVE FIX: Reference public.profiles instead of auth.users to resolve RLS conflicts.
+  created_by uuid not null references public.profiles on delete cascade
 );
 
 -- Create a junction table for team members if it doesn't exist
@@ -108,8 +109,8 @@ create policy "Team members can view their projects." on public.projects for sel
 drop policy if exists "Project creator can update their project." on public.projects;
 create policy "Project creator can update their project." on public.projects for update using (auth.uid() = created_by);
 
-drop policy if exists "Authenticated users can create projects." on public.projects;
-create policy "Authenticated users can create projects." on public.projects for insert with check (auth.uid() = created_by);
+drop policy if exists "Authenticated users can create projects for themselves." on public.projects;
+create policy "Authenticated users can create projects for themselves." on public.projects for insert with check (auth.uid() = created_by);
 
 drop policy if exists "Project creator can delete their project." on public.projects;
 create policy "Project creator can delete their project." on public.projects for delete using (auth.uid() = created_by);
@@ -118,8 +119,8 @@ create policy "Project creator can delete their project." on public.projects for
 drop policy if exists "Team members can view project members." on public.project_team_members;
 create policy "Team members can view project members." on public.project_team_members for select using (is_member_of_project(project_id, auth.uid()));
 
-drop policy if exists "Project creators can add team members." on public.project_team_members;
-create policy "Project creators can add team members." on public.project_team_members for insert with check (
+drop policy if exists "Project creators can add or remove team members." on public.project_team_members;
+create policy "Project creators can add or remove team members." on public.project_team_members for all using (
   exists (
     select 1 from projects
     where projects.id = project_id and projects.created_by = auth.uid()
@@ -128,30 +129,12 @@ create policy "Project creators can add team members." on public.project_team_me
 
 
 -- Policies for 'tasks' table
-drop policy if exists "Team members can view tasks." on public.tasks;
-create policy "Team members can view tasks." on public.tasks for select using (is_member_of_project(project_id, auth.uid()));
-
-drop policy if exists "Team members can create tasks." on public.tasks;
-create policy "Team members can create tasks." on public.tasks for insert with check (is_member_of_project(project_id, auth.uid()));
-
-drop policy if exists "Team members can update tasks." on public.tasks;
-create policy "Team members can update tasks." on public.tasks for update using (is_member_of_project(project_id, auth.uid()));
-
-drop policy if exists "Team members can delete tasks." on public.tasks;
-create policy "Team members can delete tasks." on public.tasks for delete using (is_member_of_project(project_id, auth.uid()));
+drop policy if exists "Team members can manage tasks." on public.tasks;
+create policy "Team members can manage tasks." on public.tasks for all using (is_member_of_project(project_id, auth.uid()));
 
 -- Policies for 'milestones' table
-drop policy if exists "Team members can view milestones." on public.milestones;
-create policy "Team members can view milestones." on public.milestones for select using (is_member_of_project(project_id, auth.uid()));
-
-drop policy if exists "Team members can create milestones." on public.milestones;
-create policy "Team members can create milestones." on public.milestones for insert with check (is_member_of_project(project_id, auth.uid()));
-
-drop policy if exists "Team members can update milestones." on public.milestones;
-create policy "Team members can update milestones." on public.milestones for update using (is_member_of_project(project_id, auth.uid()));
-
-drop policy if exists "Team members can delete milestones." on public.milestones;
-create policy "Team members can delete milestones." on public.milestones for delete using (is_member_of_project(project_id, auth.uid()));
+drop policy if exists "Team members can manage milestones." on public.milestones;
+create policy "Team members can manage milestones." on public.milestones for all using (is_member_of_project(project_id, auth.uid()));
 
 
 -- 3. TRIGGERS AND FUNCTIONS
@@ -173,10 +156,6 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
-
--- REMOVED: The trigger to add the creator to the team is now handled by the frontend application logic.
-drop trigger if exists on_project_created on public.projects;
-drop function if exists public.add_creator_to_team();
 `;
 
 const SetupPage: React.FC<SetupPageProps> = ({ onConfigured }) => {
