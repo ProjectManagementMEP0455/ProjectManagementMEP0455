@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Task } from '../types';
 import Card from './ui/Card';
@@ -23,15 +24,19 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks, projectStartDate, projec
   const totalDays = Math.max(1, (endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
 
   const getTaskPosition = (task: Task) => {
-    if (!task.due_date) return { left: '0%', width: '0%' };
+    if (!task.start_date || !task.due_date) return { left: '0%', width: '0%' };
     
+    const taskStart = new Date(task.start_date);
     const taskEnd = new Date(task.due_date); 
-    const taskDurationDays = 14; 
-    const taskStart = new Date(taskEnd.getTime() - taskDurationDays * 1000 * 3600 * 24);
-
-    const offsetDays = (taskStart.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
+    
+    // Ensure task start is not before project start for calculation
+    const effectiveTaskStart = taskStart < startDate ? startDate : taskStart;
+    
+    const durationDays = Math.max(1, (taskEnd.getTime() - effectiveTaskStart.getTime()) / (1000 * 3600 * 24));
+    const offsetDays = (effectiveTaskStart.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
+    
     const left = (offsetDays / totalDays) * 100;
-    const width = (taskDurationDays / totalDays) * 100;
+    const width = (durationDays / totalDays) * 100;
 
     return {
       left: `${Math.max(0, left)}%`,
@@ -76,7 +81,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks, projectStartDate, projec
               <div
                 className="absolute bg-brand-primary h-6 rounded-full flex items-center justify-start pl-2"
                 style={getTaskPosition(task)}
-                title={`${task.name} (Due: ${task.due_date})`}
+                title={`${task.name} (${task.start_date} to ${task.due_date})`}
               >
               </div>
             </div>

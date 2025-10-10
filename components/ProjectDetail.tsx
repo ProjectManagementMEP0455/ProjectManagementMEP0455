@@ -58,6 +58,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
                 name: updatedTask.name,
                 description: updatedTask.description,
                 status: updatedTask.status,
+                start_date: updatedTask.start_date,
                 due_date: updatedTask.due_date,
                 assignee_id: updatedTask.assignee_id,
                 percent_complete: updatedTask.percent_complete

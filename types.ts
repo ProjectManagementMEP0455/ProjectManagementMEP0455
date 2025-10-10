@@ -34,6 +34,7 @@ export interface Task {
   name: string;
   description: string | null;
   status: TaskStatus;
+  start_date: string | null;
   due_date: string | null;
   assignee_id: string | null; // uuid, foreign key to profiles.id
   project_id: number; // foreign key to projects.id
@@ -147,6 +148,7 @@ export type Database = {
           name: string;
           description: string | null;
           status: TaskStatus;
+          start_date: string | null;
           due_date: string | null;
           assignee_id: string | null;
           project_id: number;
@@ -160,6 +162,7 @@ export type Database = {
           project_id: number;
           description?: string | null;
           status?: TaskStatus;
+          start_date?: string | null;
           due_date?: string | null;
           assignee_id?: string | null;
           percent_complete?: number | null;
@@ -170,6 +173,7 @@ export type Database = {
           name?: string;
           description?: string | null;
           status?: TaskStatus;
+          start_date?: string | null;
           due_date?: string | null;
           assignee_id?: string | null;
           project_id?: number;

@@ -1,3 +1,4 @@
+
 import React, { useState, FormEvent, useEffect } from 'react';
 import { Task, TaskStatus, Profile } from '../types';
 
@@ -14,22 +15,29 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask,
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState('');
   const [dueDate, setDueDate] = useState('');
 
   useEffect(() => {
     if (isOpen) {
+      const today = new Date().toISOString().split('T')[0];
       setName('');
       setDescription('');
       setAssigneeId(null);
+      setStartDate(today);
       setDueDate('');
     }
   }, [isOpen]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!name || !dueDate) {
-      alert('Please fill out task name and due date.');
+    if (!name || !startDate || !dueDate) {
+      alert('Please fill out task name, start date, and due date.');
       return;
+    }
+    if (new Date(startDate) > new Date(dueDate)) {
+        alert('Due date cannot be earlier than start date.');
+        return;
     }
     
     onAddTask({
@@ -37,6 +45,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask,
       description,
       status: TaskStatus.ToDo,
       assignee_id: assigneeId,
+      start_date: startDate,
       due_date: dueDate,
       percent_complete: 0,
     });
@@ -73,19 +82,16 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask,
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="taskAssignee" className="block text-sm font-medium text-neutral-medium">Assignee</label>
-              <select
-                id="taskAssignee"
-                value={assigneeId || ''}
-                onChange={(e) => setAssigneeId(e.target.value || null)}
+             <div>
+              <label htmlFor="taskStartDate" className="block text-sm font-medium text-neutral-medium">Start Date</label>
+              <input
+                type="date"
+                id="taskStartDate"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
-              >
-                <option value="">Unassigned</option>
-                {teamMembers.map(user => (
-                  <option key={user.id} value={user.id}>{user.full_name}</option>
-                ))}
-              </select>
+                required
+              />
             </div>
             <div>
               <label htmlFor="taskDueDate" className="block text-sm font-medium text-neutral-medium">Due Date</label>
@@ -99,6 +105,20 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask,
               />
             </div>
           </div>
+           <div>
+              <label htmlFor="taskAssignee" className="block text-sm font-medium text-neutral-medium">Assignee</label>
+              <select
+                id="taskAssignee"
+                value={assigneeId || ''}
+                onChange={(e) => setAssigneeId(e.target.value || null)}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
+              >
+                <option value="">Unassigned</option>
+                {teamMembers.map(user => (
+                  <option key={user.id} value={user.id}>{user.full_name}</option>
+                ))}
+              </select>
+            </div>
           <div className="flex justify-end space-x-4 pt-4">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-neutral-dark bg-gray-200 rounded-md hover:bg-gray-300 transition-colors">
               Cancel

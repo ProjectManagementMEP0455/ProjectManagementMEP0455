@@ -1,3 +1,4 @@
+
 import React, { useState, FormEvent, useEffect } from 'react';
 import { Task, TaskStatus, Profile } from '../types';
 
@@ -13,6 +14,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onEditTa
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [status, setStatus] = useState<TaskStatus>(TaskStatus.ToDo);
   const [percentComplete, setPercentComplete] = useState(0);
@@ -22,6 +24,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onEditTa
         setName(task.name);
         setDescription(task.description || '');
         setAssigneeId(task.assignee_id);
+        setStartDate(task.start_date || '');
         setDueDate(task.due_date || '');
         setStatus(task.status as TaskStatus);
         setPercentComplete(task.percent_complete || 0);
@@ -30,9 +33,13 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onEditTa
   
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!name || !dueDate) {
-      alert('Please fill out task name and due date.');
+    if (!name || !startDate || !dueDate) {
+      alert('Please fill out task name, start date, and due date.');
       return;
+    }
+     if (new Date(startDate) > new Date(dueDate)) {
+        alert('Due date cannot be earlier than start date.');
+        return;
     }
     
     onEditTask({
@@ -41,6 +48,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onEditTa
       description,
       status,
       assignee_id: assigneeId,
+      start_date: startDate,
       due_date: dueDate,
       percent_complete: percentComplete,
     });
@@ -78,18 +86,15 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onEditTa
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="editTaskAssignee" className="block text-sm font-medium text-neutral-medium">Assignee</label>
-              <select
-                id="editTaskAssignee"
-                value={assigneeId || ''}
-                onChange={(e) => setAssigneeId(e.target.value || null)}
+              <label htmlFor="editTaskStartDate" className="block text-sm font-medium text-neutral-medium">Start Date</label>
+              <input
+                type="date"
+                id="editTaskStartDate"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
-              >
-                <option value="">Unassigned</option>
-                {teamMembers.map(user => (
-                  <option key={user.id} value={user.id}>{user.full_name}</option>
-                ))}
-              </select>
+                required
+              />
             </div>
             <div>
               <label htmlFor="editTaskDueDate" className="block text-sm font-medium text-neutral-medium">Due Date</label>
@@ -102,6 +107,20 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onEditTa
                 required
               />
             </div>
+          </div>
+          <div>
+            <label htmlFor="editTaskAssignee" className="block text-sm font-medium text-neutral-medium">Assignee</label>
+            <select
+              id="editTaskAssignee"
+              value={assigneeId || ''}
+              onChange={(e) => setAssigneeId(e.target.value || null)}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
+            >
+              <option value="">Unassigned</option>
+              {teamMembers.map(user => (
+                <option key={user.id} value={user.id}>{user.full_name}</option>
+              ))}
+            </select>
           </div>
            <div>
             <label htmlFor="editTaskStatus" className="block text-sm font-medium text-neutral-medium">Status</label>

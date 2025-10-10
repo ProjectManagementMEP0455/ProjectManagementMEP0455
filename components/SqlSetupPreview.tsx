@@ -61,6 +61,7 @@ CREATE TABLE public.tasks (
     name text NOT NULL,
     description text,
     status public.task_status DEFAULT 'To Do'::public.task_status,
+    start_date date,
     due_date date,
     assignee_id uuid REFERENCES public.profiles ON DELETE SET NULL,
     project_id bigint NOT NULL REFERENCES public.projects ON DELETE CASCADE,
@@ -194,11 +195,11 @@ inserted_team_members AS (
     ((SELECT id FROM inserted_projects WHERE name = 'Data Center Cooling System'), (SELECT id FROM demo_users WHERE email = 'manager@mep-dash.com'))
 ),
 inserted_tasks AS (
-  INSERT INTO public.tasks (name, description, status, due_date, assignee_id, project_id, percent_complete)
+  INSERT INTO public.tasks (name, description, status, start_date, due_date, assignee_id, project_id, percent_complete)
   VALUES
-    ('Procure new chiller units', 'Submit PO and confirm delivery dates for two 500-ton chiller units.', 'Done', '2024-06-15', (SELECT id FROM demo_users WHERE email = 'manager@mep-dash.com'), (SELECT id FROM inserted_projects WHERE name = 'Corporate HQ HVAC Overhaul'), 100),
-    ('Install rooftop chiller #1', 'Crane lift and installation of the first chiller unit on the main roof.', 'In Progress', '2024-09-01', (SELECT id FROM demo_users WHERE email = 'engineer@mep-dash.com'), (SELECT id FROM inserted_projects WHERE name = 'Corporate HQ HVAC Overhaul'), 50),
-    ('Install rooftop chiller #2', 'Crane lift and installation of the second chiller unit.', 'To Do', '2024-09-15', (SELECT id FROM demo_users WHERE email = 'engineer@mep-dash.com'), (SELECT id FROM inserted_projects WHERE name = 'Corporate HQ HVAC Overhaul'), 0)
+    ('Procure new chiller units', 'Submit PO and confirm delivery dates for two 500-ton chiller units.', 'Done', '2024-05-10', '2024-06-15', (SELECT id FROM demo_users WHERE email = 'manager@mep-dash.com'), (SELECT id FROM inserted_projects WHERE name = 'Corporate HQ HVAC Overhaul'), 100),
+    ('Install rooftop chiller #1', 'Crane lift and installation of the first chiller unit on the main roof.', 'In Progress', '2024-08-15', '2024-09-01', (SELECT id FROM demo_users WHERE email = 'engineer@mep-dash.com'), (SELECT id FROM inserted_projects WHERE name = 'Corporate HQ HVAC Overhaul'), 50),
+    ('Install rooftop chiller #2', 'Crane lift and installation of the second chiller unit.', 'To Do', '2024-09-02', '2024-09-15', (SELECT id FROM demo_users WHERE email = 'engineer@mep-dash.com'), (SELECT id FROM inserted_projects WHERE name = 'Corporate HQ HVAC Overhaul'), 0)
 )
 INSERT INTO public.milestones (name, due_date, project_id, completed)
 VALUES
