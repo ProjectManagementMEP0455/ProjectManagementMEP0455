@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Page, Profile, UserRole } from '../types';
 
@@ -18,17 +17,16 @@ const ICONS = {
 
 const Sidebar: React.FC<SidebarProps> = ({ currentPage, navigateTo, userProfile }) => {
   const navItems = [
-    { page: Page.Dashboard, label: 'Dashboard', icon: ICONS.dashboard, requiredRole: null },
-    { page: Page.Projects, label: 'Projects', icon: ICONS.projects, requiredRole: null },
-    { page: Page.NewProject, label: 'New Project', icon: ICONS.newProject, requiredRole: UserRole.ProjectDirector },
-    { page: Page.AdminPanel, label: 'Admin Panel', icon: ICONS.admin, requiredRole: UserRole.Admin },
+    { page: Page.Dashboard, label: 'Dashboard', icon: ICONS.dashboard, allowedRoles: null },
+    { page: Page.Projects, label: 'Projects', icon: ICONS.projects, allowedRoles: null },
+    { page: Page.NewProject, label: 'New Project', icon: ICONS.newProject, allowedRoles: [UserRole.ProjectDirector, UserRole.Admin] },
+    { page: Page.AdminPanel, label: 'Admin Panel', icon: ICONS.admin, allowedRoles: [UserRole.Admin] },
   ];
 
   const visibleNavItems = navItems.filter(item => {
-    if (!item.requiredRole) return true;
-    // Admins can see everything except pages specifically for other roles (like New Project for Director)
-    if (userProfile?.role === UserRole.Admin && item.requiredRole === UserRole.Admin) return true;
-    return userProfile?.role === item.requiredRole;
+    if (!item.allowedRoles) return true; // Show if no specific roles are required
+    if (!userProfile?.role) return false; // Hide if user has no role
+    return item.allowedRoles.includes(userProfile.role);
   });
   
   const getSqlEditorUrl = () => {

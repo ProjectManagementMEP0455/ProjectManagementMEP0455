@@ -1,13 +1,20 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { Profile, UserRole } from '../types';
+import { Profile, UserRole, Project, ProjectStatus, Page } from '../types';
 import Card from './ui/Card';
 import Avatar from './ui/Avatar';
 
 interface AdminPanelProps {
   currentUserProfile: Profile | null;
+  navigateTo: (page: Page, projectId?: number) => void;
 }
+
+const statusColors: { [key: string]: string } = {
+  [ProjectStatus.Active]: 'bg-status-blue text-white',
+  [ProjectStatus.Planning]: 'bg-status-yellow text-neutral-dark',
+  [ProjectStatus.Completed]: 'bg-status-green text-white',
+  [ProjectStatus.OnHold]: 'bg-status-red text-white',
+};
 
 const StatCard: React.FC<{ title: string; value: string | number; }> = ({ title, value }) => (
     <Card className="text-center">
@@ -16,9 +23,9 @@ const StatCard: React.FC<{ title: string; value: string | number; }> = ({ title,
     </Card>
 );
 
-const AdminPanel: React.FC<AdminPanelProps> = ({ currentUserProfile }) => {
+const AdminPanel: React.FC<AdminPanelProps> = ({ currentUserProfile, navigateTo }) => {
     const [users, setUsers] = useState<Profile[]>([]);
-    const [totalProjects, setTotalProjects] = useState(0);
+    const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -34,12 +41,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentUserProfile }) => {
             if (usersError) throw usersError;
             setUsers(usersData);
 
-            const { count: projectCount, error: projectError } = await supabase
+            const { data: projectsData, error: projectError } = await supabase
                 .from('projects')
-                .select('*', { count: 'exact', head: true });
+                .select('*')
+                .order('created_at', { ascending: false });
             
             if (projectError) throw projectError;
-            setTotalProjects(projectCount ?? 0);
+            setProjects(projectsData as Project[]);
 
         } catch (err: any) {
             setError('Failed to fetch admin data. Ensure you are logged in as an Admin.');
@@ -96,8 +104,43 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentUserProfile }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <StatCard title="Total Users" value={users.length} />
-                <StatCard title="Total Projects" value={totalProjects} />
+                <StatCard title="Total Projects" value={projects.length} />
             </div>
+
+            <Card>
+                <h3 className="text-xl font-semibold text-neutral-dark mb-4">All Projects</h3>
+                 <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead>
+                            <tr className="border-b bg-gray-50">
+                                <th className="p-4 text-sm font-semibold text-neutral-medium">Project Name</th>
+                                <th className="p-4 text-sm font-semibold text-neutral-medium">Status</th>
+                                <th className="p-4 text-sm font-semibold text-neutral-medium">Budget</th>
+                                <th className="p-4 text-sm font-semibold text-neutral-medium">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {projects.map(project => (
+                                <tr key={project.id} className="border-b hover:bg-gray-50">
+                                    <td className="p-4 font-medium text-neutral-dark">{project.name}</td>
+                                    <td className="p-4">
+                                        <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusColors[project.status]}`}>{project.status}</span>
+                                    </td>
+                                    <td className="p-4 text-neutral-medium">₹{(project.budget || 0).toLocaleString()}</td>
+                                    <td className="p-4">
+                                        <button
+                                            onClick={() => navigateTo(Page.ProjectDetail, project.id)}
+                                            className="text-brand-primary hover:underline text-sm font-semibold"
+                                        >
+                                            View Details
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </Card>
 
             <Card>
                 <h3 className="text-xl font-semibold text-neutral-dark mb-4">User Management</h3>

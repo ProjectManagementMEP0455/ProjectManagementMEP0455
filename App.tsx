@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabaseClient';
@@ -15,7 +14,7 @@ import AdminPanel from './components/AdminPanel';
 
 type NewProjectFormData = {
   name: string;
-  description: string;
+  description:string;
   start_date: string;
   end_date: string;
   budget: number;
@@ -204,7 +203,7 @@ const App: React.FC = () => {
       case Page.NewProject:
         return <NewProjectPage onAddProject={handleAddProject} />;
       case Page.AdminPanel:
-        return <AdminPanel currentUserProfile={userProfile} />;
+        return <AdminPanel currentUserProfile={userProfile} navigateTo={navigateTo} />;
       case Page.Dashboard:
       default:
         return <Dashboard navigateTo={navigateTo} projects={projects} />;
