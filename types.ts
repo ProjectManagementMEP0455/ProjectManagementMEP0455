@@ -1,4 +1,3 @@
-
 export enum Page {
   Dashboard = 'DASHBOARD',
   Projects = 'PROJECTS',
@@ -43,8 +42,10 @@ export interface Task {
   description: string;
   status: TaskStatus;
   priority: TaskPriority;
+  startDate: string;
   dueDate: string;
   assigneeIds: string[];
+  dependencies?: string[];
 }
 
 export enum ProjectStatus {

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Project, User, ProjectStatus, TaskStatus, TaskPriority, UserRole } from './types';
 
@@ -28,12 +27,12 @@ export const MOCK_PROJECTS: Project[] = [
         { id: 'm4', name: 'System Commissioning', date: '2024-09-15', completed: false },
     ],
     tasks: [
-      { id: 't1', title: 'Site Survey & Assessment', description: '', status: TaskStatus.Done, priority: TaskPriority.Critical, dueDate: '2024-01-30', assigneeIds: ['u2'] },
-      { id: 't2', title: 'Submit Permit Applications', description: '', status: TaskStatus.Done, priority: TaskPriority.High, dueDate: '2024-02-10', assigneeIds: ['u1'] },
-      { id: 't3', title: 'Install new rooftop chiller unit', description: '', status: TaskStatus.InProgress, priority: TaskPriority.Critical, dueDate: '2024-06-15', assigneeIds: ['u2', 'u3'] },
-      { id: 't4', title: 'Upgrade electrical panels on floors 5-8', description: '', status: TaskStatus.InProgress, priority: TaskPriority.High, dueDate: '2024-07-20', assigneeIds: ['u3'] },
-      { id: 't5', title: 'Client progress review meeting', description: '', status: TaskStatus.ToDo, priority: TaskPriority.Medium, dueDate: '2024-08-01', assigneeIds: ['u1'] },
-      { id: 't6', title: 'Finalize subcontractor plumbing work', description: '', status: TaskStatus.InReview, priority: TaskPriority.High, dueDate: '2024-07-25', assigneeIds: ['u4'] },
+      { id: 't1', title: 'Site Survey & Assessment', description: '', status: TaskStatus.Done, priority: TaskPriority.Critical, startDate: '2024-01-15', dueDate: '2024-01-30', assigneeIds: ['u2'] },
+      { id: 't2', title: 'Submit Permit Applications', description: '', status: TaskStatus.Done, priority: TaskPriority.High, startDate: '2024-01-31', dueDate: '2024-02-10', assigneeIds: ['u1'], dependencies: ['t1'] },
+      { id: 't3', title: 'Install new rooftop chiller unit', description: '', status: TaskStatus.InProgress, priority: TaskPriority.Critical, startDate: '2024-05-20', dueDate: '2024-06-15', assigneeIds: ['u2', 'u3'], dependencies: ['t2'] },
+      { id: 't4', title: 'Upgrade electrical panels on floors 5-8', description: '', status: TaskStatus.InProgress, priority: TaskPriority.High, startDate: '2024-06-16', dueDate: '2024-07-20', assigneeIds: ['u3'], dependencies: ['t3'] },
+      { id: 't5', title: 'Client progress review meeting', description: '', status: TaskStatus.ToDo, priority: TaskPriority.Medium, startDate: '2024-07-22', dueDate: '2024-08-01', assigneeIds: ['u1'] },
+      { id: 't6', title: 'Finalize subcontractor plumbing work', description: '', status: TaskStatus.InReview, priority: TaskPriority.High, startDate: '2024-07-10', dueDate: '2024-07-25', assigneeIds: ['u4'] },
     ]
   },
   {
@@ -51,8 +50,8 @@ export const MOCK_PROJECTS: Project[] = [
         { id: 'm6', name: 'Generator Installation', date: '2024-11-15', completed: false },
     ],
     tasks: [
-       { id: 't7', title: 'Coordinate with general contractor', description: '', status: TaskStatus.InProgress, priority: TaskPriority.High, dueDate: '2024-08-15', assigneeIds: ['u1'] },
-       { id: 't8', title: 'Install main switchgear', description: '', status: TaskStatus.ToDo, priority: TaskPriority.Critical, dueDate: '2024-09-01', assigneeIds: ['u3'] },
+       { id: 't7', title: 'Coordinate with general contractor', description: '', status: TaskStatus.InProgress, priority: TaskPriority.High, startDate: '2024-07-01', dueDate: '2024-08-15', assigneeIds: ['u1'] },
+       { id: 't8', title: 'Install main switchgear', description: '', status: TaskStatus.ToDo, priority: TaskPriority.Critical, startDate: '2024-08-16', dueDate: '2024-09-01', assigneeIds: ['u3'], dependencies: ['t7'] },
     ]
   },
   {
