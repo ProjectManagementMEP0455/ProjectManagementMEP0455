@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 import Sidebar from './components/Sidebar';
@@ -120,7 +121,7 @@ const App: React.FC = () => {
         .from('projects')
         .insert({ 
           ...projectDetails, 
-          status: ProjectStatus.Planning, // Explicitly set status
+          status: ProjectStatus.Planning,
           created_by: session.user.id 
         })
         .select()
@@ -128,25 +129,25 @@ const App: React.FC = () => {
 
       if (projectError) throw projectError;
       
-      // 2. Add selected team members (the trigger handles the creator)
-      if (teamMemberIds && teamMemberIds.length > 0) {
-        const membersToInsert = teamMemberIds
-          .filter(id => id !== session.user.id) // DB trigger handles the creator
-          .map(userId => ({
-            project_id: newProject.id,
-            user_id: userId,
-          }));
+      // 2. Add all team members, including the creator.
+      // Use a Set to handle cases where the creator might have also been selected in the form.
+      const allMemberIds = new Set(teamMemberIds);
+      allMemberIds.add(session.user.id);
 
-        if (membersToInsert.length > 0) {
-          const { error: teamError } = await supabase
-            .from('project_team_members')
-            .insert(membersToInsert);
-          
-          if (teamError) throw teamError;
-        }
+      const membersToInsert = Array.from(allMemberIds).map(userId => ({
+        project_id: newProject.id,
+        user_id: userId,
+      }));
+
+      if (membersToInsert.length > 0) {
+        const { error: teamError } = await supabase
+          .from('project_team_members')
+          .insert(membersToInsert);
+        
+        if (teamError) throw teamError;
       }
       
-      // 3. Re-fetch all projects to get the updated list with all relationships.
+      // 3. Re-fetch all projects to get the updated list.
       await fetchProjects();
       setIsAddProjectModalOpen(false);
       navigateTo(Page.Projects);
@@ -184,6 +185,10 @@ const App: React.FC = () => {
       if (project) {
         return <ProjectDetail project={project} onProjectUpdate={handleProjectUpdate} />;
       }
+      // FIX: Handle the case where a project is not found for the given ID.
+      // This prevents the function from implicitly returning undefined, which fixes
+      // the root type error and the subsequent cascade of scope-related errors.
+      return null;
     }
     switch (currentPage) {
       case Page.Dashboard:

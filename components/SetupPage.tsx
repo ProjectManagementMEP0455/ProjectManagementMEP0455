@@ -6,7 +6,7 @@ interface SetupPageProps {
 
 const supabaseSchema = `
 -- MEP PROJECT MANAGEMENT PRO - SUPABASE SCHEMA
--- version 1.2 (Idempotent)
+-- version 1.3 (Idempotent, Trigger Removed)
 -- This script can be run multiple times without causing errors.
 
 -- 1. TABLES
@@ -174,24 +174,9 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
--- Function to add project creator to team members
-create or replace function public.add_creator_to_team()
-returns trigger
-language plpgsql
-security definer set search_path = public
-as $$
-begin
-  insert into public.project_team_members (project_id, user_id)
-  values (new.id, new.created_by);
-  return new;
-end;
-$$;
-
--- Trigger to call the function when a new project is created
+-- REMOVED: The trigger to add the creator to the team is now handled by the frontend application logic.
 drop trigger if exists on_project_created on public.projects;
-create trigger on_project_created
-  after insert on public.projects
-  for each row execute procedure public.add_creator_to_team();
+drop function if exists public.add_creator_to_team();
 `;
 
 const SetupPage: React.FC<SetupPageProps> = ({ onConfigured }) => {
