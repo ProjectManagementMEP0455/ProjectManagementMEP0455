@@ -15,6 +15,7 @@ const fullSqlScript = `
 ----------------------------------------------------------------
 
 -- PART 0: CLEANUP (Drop existing objects if they exist)
+DROP FUNCTION IF EXISTS public.is_member_of_project(bigint, uuid) CASCADE;
 DROP TABLE IF EXISTS public.milestones CASCADE;
 DROP TABLE IF EXISTS public.tasks CASCADE;
 DROP TABLE IF EXISTS public.project_team_members CASCADE;
@@ -72,7 +73,21 @@ CREATE TABLE public.milestones (
     completed boolean DEFAULT false NOT NULL
 );
 
--- PART 2: ENABLE ROW LEVEL SECURITY (RLS) & DEFINE POLICIES
+-- PART 2: HELPER FUNCTIONS & RLS
+-- Helper function to check project membership to avoid RLS recursion
+CREATE OR REPLACE FUNCTION public.is_member_of_project(p_id bigint, u_id uuid)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM project_team_members
+    WHERE project_id = p_id AND user_id = u_id
+  );
+$$;
+
+-- ENABLE ROW LEVEL SECURITY (RLS) & DEFINE POLICIES
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.project_team_members ENABLE ROW LEVEL SECURITY;
@@ -85,8 +100,11 @@ CREATE POLICY "Users can update their own profile." ON public.profiles FOR UPDAT
 CREATE POLICY "Users can view projects they are a member of." ON public.projects FOR SELECT USING (EXISTS (SELECT 1 FROM public.project_team_members WHERE project_team_members.project_id = projects.id AND project_team_members.user_id = auth.uid()));
 CREATE POLICY "Directors/Managers can create projects." ON public.projects FOR INSERT WITH CHECK (((SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('Project Director'::public.user_role, 'Project Manager'::public.user_role)));
 CREATE POLICY "Directors/Managers can update projects." ON public.projects FOR UPDATE USING (((SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('Project Director'::public.user_role, 'Project Manager'::public.user_role)) AND EXISTS (SELECT 1 FROM public.project_team_members WHERE project_team_members.project_id = projects.id AND project_team_members.user_id = auth.uid()));
-CREATE POLICY "Team members can view who is on their project." ON public.project_team_members FOR SELECT USING (EXISTS (SELECT 1 FROM public.project_team_members ptm WHERE ptm.project_id = project_team_members.project_id AND ptm.user_id = auth.uid()));
-CREATE POLICY "Directors/Managers can add/remove team members." ON public.project_team_members FOR ALL USING (((SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('Project Director'::public.user_role, 'Project Manager'::public.user_role)) AND EXISTS (SELECT 1 FROM public.project_team_members ptm WHERE ptm.project_id = project_team_members.project_id AND ptm.user_id = auth.uid()));
+
+-- FIX: Replaced recursive policies with ones using a SECURITY DEFINER function to prevent infinite recursion error.
+CREATE POLICY "Team members can view who is on their project." ON public.project_team_members FOR SELECT USING (public.is_member_of_project(project_id, auth.uid()));
+CREATE POLICY "Directors/Managers can add/remove team members." ON public.project_team_members FOR ALL USING (((SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('Project Director'::public.user_role, 'Project Manager'::public.user_role)) AND public.is_member_of_project(project_id, auth.uid()));
+
 CREATE POLICY "Team members can view tasks on their projects." ON public.tasks FOR SELECT USING (EXISTS (SELECT 1 FROM public.project_team_members WHERE project_team_members.project_id = tasks.project_id AND project_team_members.user_id = auth.uid()));
 CREATE POLICY "Team members can create and update tasks." ON public.tasks FOR ALL USING (EXISTS (SELECT 1 FROM public.project_team_members WHERE project_team_members.project_id = tasks.project_id AND project_team_members.user_id = auth.uid()));
 CREATE POLICY "Team members can view milestones." ON public.milestones FOR SELECT USING (EXISTS (SELECT 1 FROM public.project_team_members WHERE project_team_members.project_id = milestones.project_id AND project_team_members.user_id = auth.uid()));
