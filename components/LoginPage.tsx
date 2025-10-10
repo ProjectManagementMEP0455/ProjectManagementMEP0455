@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
+const demoUsers = [
+  { role: 'Project Director', email: 'director@mep-dash.com', password: 'password123' },
+  { role: 'Project Manager', email: 'manager@mep-dash.com', password: 'password123' },
+  { role: 'Site Engineer', email: 'engineer@mep-dash.com', password: 'password123' },
+];
+
 const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
@@ -9,6 +15,11 @@ const LoginPage: React.FC = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  const handleDemoLogin = (user: typeof demoUsers[0]) => {
+    setEmail(user.email);
+    setPassword(user.password);
+  };
 
   const handleAuth = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -106,6 +117,25 @@ const LoginPage: React.FC = () => {
             {loading ? 'Processing...' : (isSignUp ? 'Sign Up' : 'Sign In')}
           </button>
         </form>
+
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <h3 className="text-center text-sm font-semibold text-neutral-medium mb-3">
+            Quick Demo Logins
+          </h3>
+          <div className="space-y-2">
+            {demoUsers.map((user) => (
+              <button
+                key={user.email}
+                onClick={() => handleDemoLogin(user)}
+                className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                aria-label={`Login as ${user.role}`}
+              >
+                Login as {user.role}
+              </button>
+            ))}
+          </div>
+        </div>
+
       </div>
     </div>
   );

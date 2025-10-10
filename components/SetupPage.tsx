@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import SqlSetupPreview from './SqlSetupPreview'; // Import the new component
 
 interface SetupPageProps {
   onConfigured: () => void;
@@ -8,6 +9,7 @@ interface SetupPageProps {
 const SetupPage: React.FC<SetupPageProps> = ({ onConfigured }) => {
   const [supabaseUrl, setSupabaseUrl] = useState('');
   const [supabaseAnonKey, setSupabaseAnonKey] = useState('');
+  const [showSql, setShowSql] = useState(false); // Add state for toggling SQL preview
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,8 +23,8 @@ const SetupPage: React.FC<SetupPageProps> = ({ onConfigured }) => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="p-8 bg-white rounded-lg shadow-md w-full max-w-md">
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
+      <div className="p-8 bg-white rounded-lg shadow-md w-full max-w-2xl">
         <h1 className="text-2xl font-bold text-center text-brand-primary mb-4">Setup Supabase</h1>
         <p className="text-center text-neutral-medium mb-6">
           Please enter your Supabase project credentials to continue.
@@ -63,6 +65,18 @@ const SetupPage: React.FC<SetupPageProps> = ({ onConfigured }) => {
             Save and Continue
           </button>
         </form>
+        
+        <div className="text-center mt-6">
+          <button 
+            onClick={() => setShowSql(!showSql)}
+            className="text-sm text-brand-primary hover:underline"
+          >
+            {showSql ? 'Hide' : 'Show'} SQL Setup for Database
+          </button>
+        </div>
+
+        {showSql && <SqlSetupPreview />}
+
       </div>
     </div>
   );
