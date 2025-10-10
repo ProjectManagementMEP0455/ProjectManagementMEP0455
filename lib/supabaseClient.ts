@@ -1,25 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '../types';
 
-// --- IMPORTANT SETUP STEP ---
-// To get this application running, you MUST replace the placeholder values below
-// with your actual Supabase project URL and public anon key.
-//
-// 1. Go to your Supabase project dashboard.
-// 2. Navigate to Settings > API.
-// 3. Copy the "Project URL" and paste it into `supabaseUrl`.
-// 4. Copy the "public" key (also called the "anon" key) and paste it into `supabaseAnonKey`.
-//
-// It is highly recommended to use environment variables for these in a real production environment.
-const supabaseUrl = 'https://your-project-id.supabase.co';
-const supabaseAnonKey = 'your-supabase-anon-key';
+// Read credentials from localStorage.
+const supabaseUrl = localStorage.getItem('supabaseUrl');
+const supabaseAnonKey = localStorage.getItem('supabaseAnonKey');
 
-// The createClient function requires a valid URL format.
-// The previous placeholder 'YOUR_SUPABASE_URL' was causing a crash on startup.
-// These new placeholders are syntactically valid to prevent the crash,
-// but the application will not function until you replace them with your real credentials.
-if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Supabase URL and Anon Key are required.");
-}
-
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+// If credentials are not found in localStorage (e.g., on first load),
+// we use valid placeholder values to initialize the client. This prevents the
+// app from crashing on startup with a "supabaseUrl is required" error.
+// The App.tsx component has logic to detect that the app is not configured
+// and will show the SetupPage, so this placeholder client is never used for API calls.
+export const supabase = createClient<Database>(
+  supabaseUrl || 'https://placeholder.supabase.co', 
+  supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
+);

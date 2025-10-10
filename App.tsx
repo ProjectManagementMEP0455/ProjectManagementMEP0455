@@ -7,10 +7,12 @@ import ProjectList from './components/ProjectList';
 import ProjectDetail from './components/ProjectDetail';
 import LoginPage from './components/LoginPage';
 import AddProjectModal from './components/AddProjectModal';
+import SetupPage from './components/SetupPage';
 import { Page, Project, ProjectStatus, Task, Profile } from './types';
 import { supabase } from './lib/supabaseClient';
 
 const App: React.FC = () => {
+  const [isConfigured, setIsConfigured] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [currentPage, setCurrentPage] = useState<Page>(Page.Dashboard);
@@ -20,6 +22,19 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // First, check if the app is configured with Supabase credentials
+    const url = localStorage.getItem('supabaseUrl');
+    const key = localStorage.getItem('supabaseAnonKey');
+    if (url && key && url !== 'https://your-project-id.supabase.co') {
+      setIsConfigured(true);
+    } else {
+      setLoading(false); // Not configured, stop loading
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isConfigured) return;
+
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
@@ -32,14 +47,14 @@ const App: React.FC = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [isConfigured]);
 
   useEffect(() => {
-    if (session) {
+    if (session && isConfigured) {
       fetchProfile();
       fetchProjects();
     }
-  }, [session]);
+  }, [session, isConfigured]);
 
   const fetchProfile = async () => {
     if (!session?.user) return;
@@ -92,16 +107,17 @@ const App: React.FC = () => {
     if (!session?.user) return;
     
     try {
-      const { data: newProject, error } = await supabase
+      // Create project first
+      const { data: newProject, error: projectError } = await supabase
         .from('projects')
         .insert({ ...newProjectData, created_by: session.user.id })
         .select()
         .single();
 
-      if (error) throw error;
+      if (projectError) throw projectError;
       
-      // After project creation, we re-fetch all projects to get the updated list
-      // including the new team member relationship created by the trigger.
+      // The trigger 'on_project_created' automatically adds the creator to the team.
+      // Now, re-fetch all projects to get the updated list with all relationships.
       await fetchProjects();
       setIsAddProjectModalOpen(false);
       navigateTo(Page.Projects);
@@ -115,14 +131,28 @@ const App: React.FC = () => {
      setProjects(prevProjects => 
         prevProjects.map(p => p.id === updatedProject.id ? updatedProject : p)
     );
-    // You might want to persist smaller updates directly to supabase here
-    // For simplicity, we are handling updates within the detail view for now
+  }
+
+  const handleConfigured = () => {
+    // This function is called from the SetupPage after credentials are saved.
+    // Reloading the page is the simplest way to re-initialize the Supabase client
+    // and the entire app state with the new credentials.
+    window.location.reload();
+  };
+
+  if (loading && isConfigured) {
+    return <div className="flex justify-center items-center h-screen"><p>Loading...</p></div>;
+  }
+
+  if (!isConfigured) {
+    return <SetupPage onConfigured={handleConfigured} />;
+  }
+
+  if (!session) {
+    return <LoginPage />;
   }
 
   const renderContent = () => {
-    if (loading) {
-        return <div className="flex justify-center items-center h-full"><p>Loading...</p></div>;
-    }
     if (currentPage === Page.ProjectDetail && currentProjectId) {
       const project = projects.find(p => p.id === currentProjectId);
       if (project) {
@@ -138,10 +168,6 @@ const App: React.FC = () => {
         return <Dashboard navigateTo={navigateTo} projects={projects} />;
     }
   };
-
-  if (!session) {
-    return <LoginPage />;
-  }
 
   return (
     <div className="flex h-screen bg-gray-100 font-sans">
