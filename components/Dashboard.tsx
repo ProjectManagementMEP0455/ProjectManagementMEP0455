@@ -1,28 +1,28 @@
-
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import Card from './ui/Card';
-import { MOCK_PROJECTS, MOCK_USERS } from '../constants';
-import { Page, ProjectStatus } from '../types';
+import { MOCK_USERS } from '../constants';
+import { Page, Project, ProjectStatus } from '../types';
 import Avatar from './ui/Avatar';
 
 interface DashboardProps {
   navigateTo: (page: Page, projectId?: string) => void;
+  projects: Project[];
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ navigateTo }) => {
-  const activeProjects = MOCK_PROJECTS.filter(p => p.status === ProjectStatus.Active);
-  const totalBudget = MOCK_PROJECTS.reduce((sum, p) => sum + p.budget, 0);
-  const totalSpent = MOCK_PROJECTS.reduce((sum, p) => sum + p.spent, 0);
+const Dashboard: React.FC<DashboardProps> = ({ navigateTo, projects }) => {
+  const activeProjects = projects.filter(p => p.status === ProjectStatus.Active);
+  const totalBudget = projects.reduce((sum, p) => sum + p.budget, 0);
+  const totalSpent = projects.reduce((sum, p) => sum + p.spent, 0);
 
   const projectStatusData = [
-    { name: 'Active', value: MOCK_PROJECTS.filter(p => p.status === 'Active').length, color: '#0065FF' },
-    { name: 'Planning', value: MOCK_PROJECTS.filter(p => p.status === 'Planning').length, color: '#FFAB00' },
-    { name: 'Completed', value: MOCK_PROJECTS.filter(p => p.status === 'Completed').length, color: '#36B37E' },
-    { name: 'On Hold', value: MOCK_PROJECTS.filter(p => p.status === 'On Hold').length, color: '#FF5630' },
+    { name: 'Active', value: projects.filter(p => p.status === 'Active').length, color: '#0065FF' },
+    { name: 'Planning', value: projects.filter(p => p.status === 'Planning').length, color: '#FFAB00' },
+    { name: 'Completed', value: projects.filter(p => p.status === 'Completed').length, color: '#36B37E' },
+    { name: 'On Hold', value: projects.filter(p => p.status === 'On Hold').length, color: '#FF5630' },
   ];
 
-  const budgetData = MOCK_PROJECTS.map(p => ({
+  const budgetData = projects.map(p => ({
     name: p.name.split(' ')[0],
     budget: p.budget,
     spent: p.spent,
@@ -37,6 +37,7 @@ const Dashboard: React.FC<DashboardProps> = ({ navigateTo }) => {
     {name: 'Jun', tasks: 85, resources: 10},
 ];
 
+ const downtownProject = projects.find(p => p.id === 'p1');
 
   return (
     <div className="space-y-6">
@@ -119,7 +120,7 @@ const Dashboard: React.FC<DashboardProps> = ({ navigateTo }) => {
             <Avatar user={MOCK_USERS[0]} />
             <div>
               <p className="text-neutral-dark">
-                <span className="font-semibold">{MOCK_USERS[0].name}</span> updated task <span className="text-brand-primary font-medium">"Install new rooftop chiller unit"</span> in project <span className="text-brand-primary font-medium cursor-pointer" onClick={() => navigateTo(Page.ProjectDetail, MOCK_PROJECTS[0].id)}>Downtown Tower HVAC Overhaul</span>.
+                <span className="font-semibold">{MOCK_USERS[0].name}</span> updated task <span className="text-brand-primary font-medium">"Install new rooftop chiller unit"</span> in project {downtownProject ? <span className="text-brand-primary font-medium cursor-pointer" onClick={() => navigateTo(Page.ProjectDetail, downtownProject.id)}>{downtownProject.name}</span> : null}.
               </p>
               <p className="text-sm text-neutral-medium">2 hours ago</p>
             </div>
@@ -128,7 +129,7 @@ const Dashboard: React.FC<DashboardProps> = ({ navigateTo }) => {
             <Avatar user={MOCK_USERS[1]} />
             <div>
               <p className="text-neutral-dark">
-                <span className="font-semibold">{MOCK_USERS[1].name}</span> completed milestone <span className="text-status-green font-medium">"Design Approval"</span> on <span className="text-brand-primary font-medium cursor-pointer" onClick={() => navigateTo(Page.ProjectDetail, MOCK_PROJECTS[0].id)}>Downtown Tower HVAC Overhaul</span>.
+                <span className="font-semibold">{MOCK_USERS[1].name}</span> completed milestone <span className="text-status-green font-medium">"Design Approval"</span> on {downtownProject ? <span className="text-brand-primary font-medium cursor-pointer" onClick={() => navigateTo(Page.ProjectDetail, downtownProject.id)}>{downtownProject.name}</span> : null}.
               </p>
               <p className="text-sm text-neutral-medium">1 day ago</p>
             </div>

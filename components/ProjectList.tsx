@@ -1,12 +1,13 @@
-
 import React from 'react';
 import { Page, Project, ProjectStatus } from '../types';
-import { MOCK_PROJECTS, MOCK_USERS } from '../constants';
+import { MOCK_USERS } from '../constants';
 import Card from './ui/Card';
 import Avatar from './ui/Avatar';
 
 interface ProjectListProps {
   navigateTo: (page: Page, projectId: string) => void;
+  projects: Project[];
+  onOpenAddProjectModal: () => void;
 }
 
 const statusColors: { [key in ProjectStatus]: string } = {
@@ -50,17 +51,19 @@ const ProjectCard: React.FC<{ project: Project; onClick: () => void; }> = ({ pro
     );
 }
 
-const ProjectList: React.FC<ProjectListProps> = ({ navigateTo }) => {
+const ProjectList: React.FC<ProjectListProps> = ({ navigateTo, projects, onOpenAddProjectModal }) => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold text-neutral-dark">Projects</h2>
-        <button className="bg-brand-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-brand-dark transition-colors">
+        <button 
+          onClick={onOpenAddProjectModal}
+          className="bg-brand-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-brand-dark transition-colors">
           Create New Project
         </button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {MOCK_PROJECTS.map(project => (
+        {projects.map(project => (
           <ProjectCard key={project.id} project={project} onClick={() => navigateTo(Page.ProjectDetail, project.id)} />
         ))}
       </div>
