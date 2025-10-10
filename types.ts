@@ -56,6 +56,9 @@ export interface Task {
   dueDate: string;
   assigneeIds: string[];
   dependencies?: string[];
+  equipmentSpecs?: string;
+  installationPhase?: string;
+  inspectionChecklist?: string;
 }
 
 export interface Project {
