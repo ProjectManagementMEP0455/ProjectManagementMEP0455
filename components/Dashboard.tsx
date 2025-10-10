@@ -10,6 +10,16 @@ interface DashboardProps {
   projects: Project[];
 }
 
+const formatCurrencyINR = (value: number) => {
+  if (value >= 10000000) { // 1 Crore
+      return `₹${(value / 10000000).toFixed(2)} Cr`;
+  }
+  if (value >= 100000) { // 1 Lakh
+      return `₹${(value / 100000).toFixed(2)} L`;
+  }
+  return `₹${new Intl.NumberFormat('en-IN').format(value)}`;
+};
+
 const Dashboard: React.FC<DashboardProps> = ({ navigateTo, projects }) => {
   const activeProjects = projects.filter(p => p.status === ProjectStatus.Active);
   const totalBudget = projects.reduce((sum, p) => sum + p.budget, 0);
@@ -51,11 +61,11 @@ const Dashboard: React.FC<DashboardProps> = ({ navigateTo, projects }) => {
         </Card>
         <Card>
           <h3 className="text-lg font-semibold text-neutral-medium">Total Budget</h3>
-          <p className="text-3xl font-bold text-neutral-dark">${(totalBudget / 1_000_000).toFixed(1)}M</p>
+          <p className="text-3xl font-bold text-neutral-dark">{formatCurrencyINR(totalBudget)}</p>
         </Card>
         <Card>
           <h3 className="text-lg font-semibold text-neutral-medium">Total Spent</h3>
-          <p className="text-3xl font-bold text-neutral-dark">${(totalSpent / 1_000_000).toFixed(1)}M</p>
+          <p className="text-3xl font-bold text-neutral-dark">{formatCurrencyINR(totalSpent)}</p>
         </Card>
         <Card>
           <h3 className="text-lg font-semibold text-neutral-medium">On-Time Completion</h3>
@@ -71,8 +81,8 @@ const Dashboard: React.FC<DashboardProps> = ({ navigateTo, projects }) => {
             <BarChart data={budgetData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
-              <YAxis tickFormatter={(value) => `$${Number(value) / 1000000}M`} />
-              <Tooltip formatter={(value) => `$${new Intl.NumberFormat().format(Number(value))}`}/>
+              <YAxis tickFormatter={(value) => formatCurrencyINR(Number(value))} />
+              <Tooltip formatter={(value) => `₹${new Intl.NumberFormat('en-IN').format(Number(value))}`}/>
               <Legend />
               <Bar dataKey="budget" fill="#4C9AFF" />
               <Bar dataKey="spent" fill="#0052CC" />

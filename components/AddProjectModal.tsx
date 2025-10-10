@@ -115,7 +115,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClose, onAd
             </div>
           </div>
            <div>
-            <label htmlFor="projectBudget" className="block text-sm font-medium text-neutral-medium">Budget ($)</label>
+            <label htmlFor="projectBudget" className="block text-sm font-medium text-neutral-medium">Budget (₹)</label>
             <input
               type="number"
               id="projectBudget"

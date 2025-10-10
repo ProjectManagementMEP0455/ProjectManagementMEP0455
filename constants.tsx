@@ -41,8 +41,8 @@ export const MOCK_PROJECTS: Project[] = [
     status: ProjectStatus.Active,
     startDate: '2024-05-15',
     endDate: '2024-12-20',
-    budget: 5000000,
-    spent: 1200000,
+    budget: 400000000, // 40 Cr
+    spent: 96000000,    // 9.6 Cr
     teamMemberIds: ['u1', 'u2', 'u3', 'u4', 'u5'],
     milestones: p1_milestones,
     tasks: p1_tasks,
@@ -54,8 +54,8 @@ export const MOCK_PROJECTS: Project[] = [
     status: ProjectStatus.Planning,
     startDate: '2024-07-01',
     endDate: '2025-08-31',
-    budget: 12500000,
-    spent: 50000,
+    budget: 1000000000, // 100 Cr
+    spent: 4000000,       // 40 L
     teamMemberIds: ['u1', 'u2', 'u4'],
     milestones: [],
     tasks: p2_tasks,
@@ -67,8 +67,8 @@ export const MOCK_PROJECTS: Project[] = [
     status: ProjectStatus.OnHold,
     startDate: '2024-06-01',
     endDate: '2025-02-28',
-    budget: 8000000,
-    spent: 250000,
+    budget: 640000000, // 64 Cr
+    spent: 20000000,   // 2 Cr
     teamMemberIds: ['u1', 'u3', 'u5'],
     milestones: [],
     tasks: [],
@@ -80,8 +80,8 @@ export const MOCK_PROJECTS: Project[] = [
     status: ProjectStatus.Completed,
     startDate: '2023-09-01',
     endDate: '2024-04-15',
-    budget: 2200000,
-    spent: 2150000,
+    budget: 176000000, // 17.6 Cr
+    spent: 172000000,  // 17.2 Cr
     teamMemberIds: ['u1', 'u2', 'u3'],
     milestones: [],
     tasks: [],

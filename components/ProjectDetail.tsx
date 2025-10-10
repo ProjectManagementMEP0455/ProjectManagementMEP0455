@@ -61,8 +61,8 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project }) => {
                         <p><strong>Status:</strong> {project.status}</p>
                         <p><strong>Start Date:</strong> {new Date(project.startDate).toLocaleDateString()}</p>
                         <p><strong>End Date:</strong> {new Date(project.endDate).toLocaleDateString()}</p>
-                        <p><strong>Budget:</strong> ${project.budget.toLocaleString()}</p>
-                        <p><strong>Spent:</strong> ${project.spent.toLocaleString()}</p>
+                        <p><strong>Budget:</strong> ₹{project.budget.toLocaleString('en-IN')}</p>
+                        <p><strong>Spent:</strong> ₹{project.spent.toLocaleString('en-IN')}</p>
                     </div>
                 </Card>
                  <Card>
@@ -94,15 +94,15 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project }) => {
                 <div className="flex items-center justify-around">
                      <div className="text-center">
                         <p className="text-lg text-neutral-medium">Total Budget</p>
-                        <p className="text-4xl font-bold text-neutral-dark">${project.budget.toLocaleString()}</p>
+                        <p className="text-4xl font-bold text-neutral-dark">₹{project.budget.toLocaleString('en-IN')}</p>
                      </div>
                       <div className="text-center">
                         <p className="text-lg text-neutral-medium">Amount Spent</p>
-                        <p className="text-4xl font-bold text-brand-primary">${project.spent.toLocaleString()}</p>
+                        <p className="text-4xl font-bold text-brand-primary">₹{project.spent.toLocaleString('en-IN')}</p>
                      </div>
                       <div className="text-center">
                         <p className="text-lg text-neutral-medium">Remaining</p>
-                        <p className={`text-4xl font-bold ${project.budget - project.spent < 0 ? 'text-status-red' : 'text-status-green'}`}>${(project.budget - project.spent).toLocaleString()}</p>
+                        <p className={`text-4xl font-bold ${project.budget - project.spent < 0 ? 'text-status-red' : 'text-status-green'}`}>₹{(project.budget - project.spent).toLocaleString('en-IN')}</p>
                      </div>
                 </div>
                 <ResponsiveContainer width="100%" height={300} className="mt-8">
@@ -110,7 +110,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project }) => {
                         <Pie data={budgetData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} label>
                             {budgetData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                         </Pie>
-                        <Tooltip formatter={(value) => `$${new Intl.NumberFormat().format(Number(value))}`} />
+                        <Tooltip formatter={(value) => `₹${new Intl.NumberFormat('en-IN').format(Number(value))}`} />
                         <Legend />
                     </PieChart>
                 </ResponsiveContainer>
