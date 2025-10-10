@@ -1,158 +1,177 @@
 import React, { useState } from 'react';
-import { Project, Task } from '../types';
+import { Project, ProjectStatus, Task, User } from '../types';
+import { MOCK_USERS } from '../constants';
+import Card from './ui/Card';
+import Avatar from './ui/Avatar';
 import KanbanBoard from './KanbanBoard';
 import GanttChart from './GanttChart';
-import Card from './ui/Card';
-import { MOCK_USERS } from '../constants';
-import Avatar from './ui/Avatar';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import MilestonesView from './MilestonesView';
 import AddTaskModal from './AddTaskModal';
+import EditTaskModal from './EditTaskModal';
+
+type ProjectDetailView = 'overview' | 'tasks' | 'gantt' | 'milestones';
 
 interface ProjectDetailProps {
-  project: Project;
+    project: Project;
+    onTasksUpdate: (projectId: string, tasks: Task[]) => void;
 }
 
-type Tab = 'overview' | 'tasks' | 'schedule' | 'budget' | 'team';
-
-const ProjectDetail: React.FC<ProjectDetailProps> = ({ project }) => {
-  const [activeTab, setActiveTab] = useState<Tab>('tasks');
-  const [tasks, setTasks] = useState<Task[]>(project.tasks);
+const ProjectDetail: React.FC<ProjectDetailProps> = ({ project: initialProject, onTasksUpdate }) => {
+  const [project, setProject] = useState<Project>(initialProject);
+  const [activeView, setActiveView] = useState<ProjectDetailView>('overview');
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
-  
-  const teamMembers = MOCK_USERS.filter(u => project.teamMemberIds.includes(u.id));
+  const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
-  const budgetData = [
-    { name: 'Spent', value: project.spent, color: '#0052CC' },
-    { name: 'Remaining', value: project.budget - project.spent, color: '#B3D4FF' },
-  ];
+  const teamMembers = MOCK_USERS.filter(user => project.teamMemberIds.includes(user.id));
+  const progress = project.budget > 0 ? (project.spent / project.budget) * 100 : 0;
   
-  const handleAddTask = (newTask: Task) => {
-    setTasks(prevTasks => [...prevTasks, newTask]);
-    // In a real app, you would also make an API call here to save the task.
+  const handleTaskUpdate = (updatedTasks: Task[]) => {
+      setProject(prev => ({...prev, tasks: updatedTasks}));
+      onTasksUpdate(project.id, updatedTasks);
   };
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'overview':
-        return (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-             <div className="md:col-span-2 space-y-6">
-                <Card>
-                    <h3 className="text-xl font-semibold mb-2 text-neutral-dark">Project Description</h3>
-                    <p className="text-neutral-medium">{project.description}</p>
-                </Card>
-                <Card>
-                    <h3 className="text-xl font-semibold mb-4 text-neutral-dark">Key Milestones</h3>
-                    <ul className="space-y-3">
-                        {project.milestones.map(m => (
-                            <li key={m.id} className="flex items-center">
-                                <input type="checkbox" checked={m.completed} readOnly className="h-5 w-5 rounded text-brand-primary focus:ring-brand-secondary" />
-                                <span className={`ml-3 ${m.completed ? 'line-through text-neutral-medium' : 'text-neutral-dark'}`}>{m.name}</span>
-                                <span className="ml-auto text-sm text-neutral-medium">{new Date(m.date).toLocaleDateString()}</span>
-                            </li>
-                        ))}
-                    </ul>
-                </Card>
-             </div>
-             <div className="space-y-6">
-                <Card>
-                    <h3 className="text-xl font-semibold mb-2 text-neutral-dark">Project Info</h3>
-                    <div className="text-sm space-y-2 text-neutral-dark">
-                        <p><strong>Status:</strong> {project.status}</p>
-                        <p><strong>Start Date:</strong> {new Date(project.startDate).toLocaleDateString()}</p>
-                        <p><strong>End Date:</strong> {new Date(project.endDate).toLocaleDateString()}</p>
-                        <p><strong>Budget:</strong> ₹{project.budget.toLocaleString('en-IN')}</p>
-                        <p><strong>Spent:</strong> ₹{project.spent.toLocaleString('en-IN')}</p>
-                    </div>
-                </Card>
-                 <Card>
-                    <h3 className="text-xl font-semibold mb-4 text-neutral-dark">Team Members</h3>
-                    <ul className="space-y-3">
-                        {teamMembers.map(user => (
-                            <li key={user.id} className="flex items-center space-x-3">
-                                <Avatar user={user} />
-                                <div>
-                                    <p className="font-medium text-neutral-dark">{user.name}</p>
-                                    <p className="text-sm text-neutral-medium">{user.role}</p>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                </Card>
-             </div>
-          </div>
-        );
+  const handleAddTask = (newTaskData: Omit<Task, 'id'>) => {
+    const newTask: Task = {
+      ...newTaskData,
+      id: `t${project.id}-${project.tasks.length + 1}`,
+    };
+    const updatedTasks = [...project.tasks, newTask];
+    setProject(prev => ({ ...prev, tasks: updatedTasks}));
+    onTasksUpdate(project.id, updatedTasks);
+    setIsAddTaskModalOpen(false);
+  };
+  
+  const handleEditTask = (updatedTask: Task) => {
+    const updatedTasks = project.tasks.map(task => task.id === updatedTask.id ? updatedTask : task);
+    setProject(prev => ({
+        ...prev,
+        tasks: updatedTasks
+    }));
+    onTasksUpdate(project.id, updatedTasks);
+    setIsEditTaskModalOpen(false);
+    setSelectedTask(null);
+  };
+
+  const openEditModal = (task: Task) => {
+    setSelectedTask(task);
+    setIsEditTaskModalOpen(true);
+  };
+
+  const renderView = () => {
+    switch (activeView) {
       case 'tasks':
-        return <KanbanBoard tasks={tasks} onOpenAddTaskModal={() => setIsAddTaskModalOpen(true)} />;
-      case 'schedule':
-        const projectForGantt = { ...project, tasks };
-        return <GanttChart project={projectForGantt} />;
-      case 'budget':
-        return (
-            <Card>
-                <h3 className="text-xl font-semibold mb-4 text-neutral-dark">Budget Overview</h3>
-                <div className="flex items-center justify-around">
-                     <div className="text-center">
-                        <p className="text-lg text-neutral-medium">Total Budget</p>
-                        <p className="text-4xl font-bold text-neutral-dark">₹{project.budget.toLocaleString('en-IN')}</p>
-                     </div>
-                      <div className="text-center">
-                        <p className="text-lg text-neutral-medium">Amount Spent</p>
-                        <p className="text-4xl font-bold text-brand-primary">₹{project.spent.toLocaleString('en-IN')}</p>
-                     </div>
-                      <div className="text-center">
-                        <p className="text-lg text-neutral-medium">Remaining</p>
-                        <p className={`text-4xl font-bold ${project.budget - project.spent < 0 ? 'text-status-red' : 'text-status-green'}`}>₹{(project.budget - project.spent).toLocaleString('en-IN')}</p>
-                     </div>
-                </div>
-                <ResponsiveContainer width="100%" height={300} className="mt-8">
-                    <PieChart>
-                        <Pie data={budgetData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} label>
-                            {budgetData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                        </Pie>
-                        <Tooltip formatter={(value) => `₹${new Intl.NumberFormat('en-IN').format(Number(value))}`} />
-                        <Legend />
-                    </PieChart>
-                </ResponsiveContainer>
-            </Card>
-        );
-      case 'team':
-        return <Card>Team content goes here...</Card>;
+        return <KanbanBoard tasks={project.tasks} onTaskUpdate={handleTaskUpdate} onEditTask={openEditModal} onAddTask={() => setIsAddTaskModalOpen(true)} />;
+      case 'gantt':
+        return <GanttChart tasks={project.tasks} projectStartDate={project.startDate} projectEndDate={project.endDate} />;
+      case 'milestones':
+          return <MilestonesView milestones={project.milestones} />;
+      case 'overview':
       default:
-        return null;
+        return renderOverview();
     }
   };
+  
+  const formatCurrencyINR = (value: number) => {
+    if (value >= 10000000) return `₹${(value / 10000000).toFixed(2)} Cr`;
+    if (value >= 100000) return `₹${(value / 100000).toFixed(2)} L`;
+    return `₹${new Intl.NumberFormat('en-IN').format(value)}`;
+  };
 
-  const TabButton: React.FC<{ label: string; value: Tab; }> = ({ label, value }) => (
-    <button
-      onClick={() => setActiveTab(value)}
-      className={`px-4 py-2 font-semibold text-sm rounded-md transition-colors ${
-        activeTab === value ? 'bg-brand-primary text-white' : 'text-neutral-medium hover:bg-gray-200'
-      }`}
-    >
-      {label}
-    </button>
+  const renderOverview = () => (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+            <Card>
+                <h3 className="text-xl font-semibold mb-2 text-neutral-dark">Project Description</h3>
+                <p className="text-neutral-medium">{project.description}</p>
+            </Card>
+            <Card>
+                <h3 className="text-xl font-semibold mb-4 text-neutral-dark">Key Metrics</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div>
+                        <p className="text-sm text-neutral-medium">Status</p>
+                        <p className={`font-bold text-lg ${project.status === ProjectStatus.Active ? 'text-status-blue' : 'text-neutral-dark'}`}>{project.status}</p>
+                    </div>
+                     <div>
+                        <p className="text-sm text-neutral-medium">Progress</p>
+                        <p className="font-bold text-lg text-brand-primary">{progress.toFixed(0)}%</p>
+                    </div>
+                    <div>
+                        <p className="text-sm text-neutral-medium">Budget</p>
+                        <p className="font-bold text-lg text-neutral-dark">{formatCurrencyINR(project.budget)}</p>
+                    </div>
+                    <div>
+                        <p className="text-sm text-neutral-medium">Spent</p>
+                        <p className="font-bold text-lg text-neutral-dark">{formatCurrencyINR(project.spent)}</p>
+                    </div>
+                </div>
+            </Card>
+        </div>
+        <div className="lg:col-span-1 space-y-6">
+            <Card>
+                <h3 className="text-xl font-semibold mb-4 text-neutral-dark">Team Members</h3>
+                <ul className="space-y-3">
+                    {teamMembers.map(user => (
+                        <li key={user.id} className="flex items-center space-x-3">
+                            <Avatar user={user} size="md" />
+                            <div>
+                                <p className="font-semibold text-neutral-dark">{user.name}</p>
+                                <p className="text-sm text-neutral-medium">{user.role}</p>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            </Card>
+        </div>
+    </div>
   );
 
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold text-neutral-dark">{project.name}</h2>
-      
-      <div className="flex space-x-2 border-b border-gray-200 pb-2">
-        <TabButton label="Overview" value="overview" />
-        <TabButton label="Tasks" value="tasks" />
-        <TabButton label="Schedule" value="schedule" />
-        <TabButton label="Budget" value="budget" />
-        <TabButton label="Team" value="team" />
+      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+        <div>
+          <h2 className="text-3xl font-bold text-neutral-dark">{project.name}</h2>
+          <p className="text-neutral-medium">
+            {new Date(project.startDate).toLocaleDateString()} - {new Date(project.endDate).toLocaleDateString()}
+          </p>
+        </div>
+        <div className="flex items-center bg-gray-200 rounded-lg p-1">
+          {(['overview', 'tasks', 'gantt', 'milestones'] as ProjectDetailView[]).map(view => (
+            <button
+              key={view}
+              onClick={() => setActiveView(view)}
+              className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors capitalize ${
+                activeView === view ? 'bg-white text-brand-primary shadow' : 'text-neutral-medium hover:bg-gray-300'
+              }`}
+            >
+              {view}
+            </button>
+          ))}
+        </div>
       </div>
-
-      <div>{renderTabContent()}</div>
       
-      <AddTaskModal
+      <div>{renderView()}</div>
+      
+      <AddTaskModal 
         isOpen={isAddTaskModalOpen}
         onClose={() => setIsAddTaskModalOpen(false)}
         onAddTask={handleAddTask}
+        teamMembers={teamMembers}
       />
+
+      {selectedTask && (
+        <EditTaskModal
+            isOpen={isEditTaskModalOpen}
+            onClose={() => {
+                setIsEditTaskModalOpen(false);
+                setSelectedTask(null);
+            }}
+            onEditTask={handleEditTask}
+            task={selectedTask}
+            teamMembers={teamMembers}
+        />
+      )}
+
     </div>
   );
 };

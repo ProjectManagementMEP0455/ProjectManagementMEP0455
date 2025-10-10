@@ -6,13 +6,10 @@ import ProjectList from './components/ProjectList';
 import ProjectDetail from './components/ProjectDetail';
 import LoginPage from './components/LoginPage';
 import AddProjectModal from './components/AddProjectModal';
-import { Page, Project, ProjectStatus } from './types';
+import { Page, Project, ProjectStatus, Task } from './types';
 import { MOCK_PROJECTS } from './constants';
 
-// Omit type from AddProjectModal
-type NewProjectData = Omit<Project, 'id' | 'status' | 'spent' | 'milestones' | 'tasks'>;
-
-function App() {
+const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page>(Page.Dashboard);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
@@ -21,63 +18,77 @@ function App() {
 
   const navigateTo = (page: Page, projectId?: string) => {
     setCurrentPage(page);
-    if (projectId) {
-      setCurrentProjectId(projectId);
-    } else if (page !== Page.ProjectDetail) {
-      setCurrentProjectId(null);
-    }
+    setCurrentProjectId(projectId || null);
   };
 
-  const handleAddProject = (projectData: NewProjectData) => {
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+    setCurrentPage(Page.Dashboard);
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+  };
+  
+  const handleAddProject = (newProjectData: Omit<Project, 'id' | 'status' | 'spent' | 'milestones' | 'tasks'>) => {
     const newProject: Project = {
-        ...projectData,
-        id: `p${Date.now()}`,
+        ...newProjectData,
+        id: `p${projects.length + 1}`,
         status: ProjectStatus.Planning,
         spent: 0,
         milestones: [],
-        tasks: []
+        tasks: [],
     };
-    setProjects(prev => [newProject, ...prev]);
+    setProjects(prevProjects => [newProject, ...prevProjects]);
     setIsAddProjectModalOpen(false);
     navigateTo(Page.Projects);
   };
+  
+  const updateProjectTasks = (projectId: string, tasks: Task[]) => {
+    setProjects(prevProjects => 
+        prevProjects.map(p => p.id === projectId ? {...p, tasks} : p)
+    );
+  }
 
   const renderContent = () => {
-    if (currentProjectId && currentPage === Page.ProjectDetail) {
+    if (currentPage === Page.ProjectDetail && currentProjectId) {
       const project = projects.find(p => p.id === currentProjectId);
-      return project ? <ProjectDetail project={project} /> : <div>Project not found</div>;
+      if (project) {
+        return <ProjectDetail project={project} onTasksUpdate={updateProjectTasks} />;
+      }
     }
-
     switch (currentPage) {
       case Page.Dashboard:
         return <Dashboard navigateTo={navigateTo} projects={projects} />;
       case Page.Projects:
         return <ProjectList navigateTo={navigateTo} projects={projects} onOpenAddProjectModal={() => setIsAddProjectModalOpen(true)} />;
       default:
+        // FIX: Add a default case to render the Dashboard if the page is unknown.
+        // This resolves a potential issue where no content is rendered.
         return <Dashboard navigateTo={navigateTo} projects={projects} />;
     }
   };
 
   if (!isLoggedIn) {
-    return <LoginPage onLogin={() => setIsLoggedIn(true)} />;
+    return <LoginPage onLogin={handleLogin} />;
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans">
+    <div className="flex h-screen bg-gray-100 font-sans">
       <Sidebar currentPage={currentPage} navigateTo={navigateTo} />
-      <div className="flex-1 flex flex-col">
-        <Header onLogout={() => setIsLoggedIn(false)} />
-        <main className="flex-1 p-8 overflow-y-auto">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header onLogout={handleLogout}/>
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-8">
           {renderContent()}
         </main>
       </div>
       <AddProjectModal 
-        isOpen={isAddProjectModalOpen}
+        isOpen={isAddProjectModalOpen} 
         onClose={() => setIsAddProjectModalOpen(false)}
         onAddProject={handleAddProject}
       />
     </div>
   );
-}
+};
 
 export default App;

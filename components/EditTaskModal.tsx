@@ -1,31 +1,31 @@
 import React, { useState, FormEvent, useEffect } from 'react';
 import { Task, TaskStatus, User } from '../types';
 
-type NewTaskData = Omit<Task, 'id'>;
-
-interface AddTaskModalProps {
+interface EditTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddTask: (taskData: NewTaskData) => void;
+  onEditTask: (task: Task) => void;
+  task: Task;
   teamMembers: User[];
 }
 
-const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask, teamMembers }) => {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [assigneeId, setAssigneeId] = useState<string | null>(null);
-  const [dueDate, setDueDate] = useState('');
+const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onEditTask, task, teamMembers }) => {
+  const [name, setName] = useState(task.name);
+  const [description, setDescription] = useState(task.description);
+  const [assigneeId, setAssigneeId] = useState<string | null>(task.assigneeId);
+  const [dueDate, setDueDate] = useState(task.dueDate);
+  const [status, setStatus] = useState<TaskStatus>(task.status);
 
   useEffect(() => {
-    if (isOpen) {
-      // Reset form when modal opens
-      setName('');
-      setDescription('');
-      setAssigneeId(null);
-      setDueDate('');
+    if (task) {
+        setName(task.name);
+        setDescription(task.description);
+        setAssigneeId(task.assigneeId);
+        setDueDate(task.dueDate);
+        setStatus(task.status);
     }
-  }, [isOpen]);
-
+  }, [task, isOpen]);
+  
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!name || !dueDate) {
@@ -33,10 +33,11 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask,
       return;
     }
     
-    onAddTask({
+    onEditTask({
+      ...task,
       name,
       description,
-      status: TaskStatus.ToDo,
+      status,
       assigneeId,
       dueDate,
     });
@@ -49,13 +50,13 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask,
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
       <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-lg">
-        <h2 className="text-2xl font-bold text-neutral-dark mb-6">Add New Task</h2>
+        <h2 className="text-2xl font-bold text-neutral-dark mb-6">Edit Task</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="taskName" className="block text-sm font-medium text-neutral-medium">Task Name</label>
+            <label htmlFor="editTaskName" className="block text-sm font-medium text-neutral-medium">Task Name</label>
             <input
               type="text"
-              id="taskName"
+              id="editTaskName"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
@@ -63,9 +64,9 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask,
             />
           </div>
           <div>
-            <label htmlFor="taskDescription" className="block text-sm font-medium text-neutral-medium">Description</label>
+            <label htmlFor="editTaskDescription" className="block text-sm font-medium text-neutral-medium">Description</label>
             <textarea
-              id="taskDescription"
+              id="editTaskDescription"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
@@ -74,9 +75,9 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask,
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="taskAssignee" className="block text-sm font-medium text-neutral-medium">Assignee</label>
+              <label htmlFor="editTaskAssignee" className="block text-sm font-medium text-neutral-medium">Assignee</label>
               <select
-                id="taskAssignee"
+                id="editTaskAssignee"
                 value={assigneeId || ''}
                 onChange={(e) => setAssigneeId(e.target.value || null)}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
@@ -88,10 +89,10 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask,
               </select>
             </div>
             <div>
-              <label htmlFor="taskDueDate" className="block text-sm font-medium text-neutral-medium">Due Date</label>
+              <label htmlFor="editTaskDueDate" className="block text-sm font-medium text-neutral-medium">Due Date</label>
               <input
                 type="date"
-                id="taskDueDate"
+                id="editTaskDueDate"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
@@ -99,12 +100,23 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask,
               />
             </div>
           </div>
+          <div>
+            <label htmlFor="editTaskStatus" className="block text-sm font-medium text-neutral-medium">Status</label>
+            <select
+              id="editTaskStatus"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as TaskStatus)}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
+            >
+              {Object.values(TaskStatus).map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
           <div className="flex justify-end space-x-4 pt-4">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-neutral-dark bg-gray-200 rounded-md hover:bg-gray-300 transition-colors">
               Cancel
             </button>
             <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-dark transition-colors">
-              Add Task
+              Save Changes
             </button>
           </div>
         </form>
@@ -113,4 +125,4 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask,
   );
 };
 
-export default AddTaskModal;
+export default EditTaskModal;

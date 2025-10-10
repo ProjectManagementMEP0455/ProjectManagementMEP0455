@@ -1,10 +1,6 @@
-export interface User {
-  id: string;
-  name: string;
-  avatarUrl: string;
-  role: string;
-}
-
+// FIX: Define and export all necessary types for the application.
+// This creates a central module for types, resolving errors where
+// files attempted to import from a non-existent or empty types file.
 export enum Page {
   Dashboard = 'Dashboard',
   Projects = 'Projects',
@@ -21,38 +17,30 @@ export enum ProjectStatus {
 export enum TaskStatus {
     ToDo = 'To Do',
     InProgress = 'In Progress',
-    InReview = 'In Review',
     Done = 'Done',
 }
 
-export enum TaskPriority {
-    Critical = 'Critical',
-    High = 'High',
-    Medium = 'Medium',
-    Low = 'Low',
-}
-
-export interface Milestone {
+export interface User {
   id: string;
   name: string;
-  date: string; // ISO string
-  completed: boolean;
+  role: string;
+  avatarUrl: string;
 }
 
 export interface Task {
-  id:string;
-  title: string;
-  description: string;
-  status: TaskStatus;
-  priority: TaskPriority;
-  startDate: string; // ISO string
-  dueDate: string; // ISO string
-  assigneeIds: string[];
-  dependencies?: string[];
-  // MEP specific fields
-  equipmentSpecs?: string;
-  installationPhase?: string;
-  inspectionChecklist?: string;
+    id: string;
+    name: string;
+    description: string;
+    status: TaskStatus;
+    assigneeId: string | null;
+    dueDate: string;
+}
+
+export interface Milestone {
+    id: string;
+    name: string;
+    dueDate: string;
+    completed: boolean;
 }
 
 export interface Project {
@@ -60,8 +48,8 @@ export interface Project {
   name: string;
   description: string;
   status: ProjectStatus;
-  startDate: string; // ISO string
-  endDate: string; // ISO string
+  startDate: string;
+  endDate: string;
   budget: number;
   spent: number;
   teamMemberIds: string[];
