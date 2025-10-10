@@ -70,7 +70,8 @@ export enum Page {
 }
 
 
-// This is for Supabase client typing
+// FIX: Rewrote the Database type to avoid circular references which caused 'never' type errors.
+// Insert and Update types are now defined explicitly.
 export type Database = {
   public: {
     Tables: {
@@ -89,11 +90,31 @@ export type Database = {
           end_date: string | null;
           budget: number | null;
           spent: number | null;
-          status: string; // Corresponds to ProjectStatus enum
+          status: string;
           created_by: string;
         };
-        Insert: Omit<Database['public']['Tables']['projects']['Row'], 'id' | 'created_at'>;
-        Update: Partial<Database['public']['Tables']['projects']['Row']>;
+        Insert: {
+          name: string;
+          created_by: string;
+          description?: string | null;
+          start_date?: string | null;
+          end_date?: string | null;
+          budget?: number | null;
+          spent?: number | null;
+          status?: string;
+        };
+        Update: Partial<{
+          id: number;
+          created_at: string;
+          name: string;
+          description: string | null;
+          start_date: string | null;
+          end_date: string | null;
+          budget: number | null;
+          spent: number | null;
+          status: string;
+          created_by: string;
+        }>;
       };
       tasks: {
         Row: {
@@ -101,14 +122,32 @@ export type Database = {
           created_at: string;
           name: string;
           description: string | null;
-          status: string; // Corresponds to TaskStatus enum
+          status: string;
           due_date: string | null;
           assignee_id: string | null;
           project_id: number;
           percent_complete: number | null;
         };
-        Insert: Omit<Database['public']['Tables']['tasks']['Row'], 'id' | 'created_at'>;
-        Update: Partial<Database['public']['Tables']['tasks']['Row']>;
+        Insert: {
+          name: string;
+          project_id: number;
+          description?: string | null;
+          status?: string;
+          due_date?: string | null;
+          assignee_id?: string | null;
+          percent_complete?: number | null;
+        };
+        Update: Partial<{
+          id: number;
+          created_at: string;
+          name: string;
+          description: string | null;
+          status: string;
+          due_date: string | null;
+          assignee_id: string | null;
+          project_id: number;
+          percent_complete: number | null;
+        }>;
       };
       milestones: {
         Row: {
@@ -119,8 +158,20 @@ export type Database = {
             project_id: number;
             completed: boolean;
         };
-        Insert: Omit<Database['public']['Tables']['milestones']['Row'], 'id' | 'created_at'>;
-        Update: Partial<Database['public']['Tables']['milestones']['Row']>;
+        Insert: {
+            name: string;
+            due_date: string;
+            project_id: number;
+            completed?: boolean;
+        };
+        Update: Partial<{
+            id: number;
+            created_at: string;
+            name: string;
+            due_date: string;
+            project_id: number;
+            completed: boolean;
+        }>;
       };
       project_team_members: {
         Row: {

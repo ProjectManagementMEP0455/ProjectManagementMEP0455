@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabaseClient';
@@ -76,7 +77,7 @@ const App: React.FC = () => {
         
       if (projectsError) throw projectsError;
 
-      const formattedProjects = projectsData.map(p => ({
+      const formattedProjects = (projectsData || []).map(p => ({
         ...p,
         status: p.status as ProjectStatus,
         teamMembers: p.project_team_members.map((ptm: any) => ptm.profile)
@@ -117,6 +118,12 @@ const App: React.FC = () => {
             .single();
 
         if (projectError) throw projectError;
+
+        // FIX: Add null check for newProject to resolve 'possibly null' error.
+        if (!newProject) {
+            alert("Error adding project: Could not create project record.");
+            return;
+        }
 
         // 2. Insert into project_team_members table
         if (projectData.teamMemberIds && projectData.teamMemberIds.length > 0) {

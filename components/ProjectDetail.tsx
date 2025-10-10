@@ -69,6 +69,12 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project: initialProject, 
 
         if (error) throw error;
 
+        // FIX: Add null check for data to resolve 'possibly null' error.
+        if (!data) {
+            alert("Error updating task: Could not find updated task record.");
+            return;
+        }
+
         const updatedTasks = project.tasks.map(task => task.id === data.id ? data : task);
         const updatedProject = { ...project, tasks: updatedTasks };
         setProject(updatedProject);
