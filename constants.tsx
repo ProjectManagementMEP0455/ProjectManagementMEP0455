@@ -68,7 +68,7 @@ export const MOCK_PROJECTS: Project[] = [
     startDate: '2024-06-01',
     endDate: '2025-02-28',
     budget: 640000000, // 64 Cr
-    spent: 20000000,   // 2 Cr
+    spent: 700000000,   // 70 Cr - Over budget
     teamMemberIds: ['u1', 'u3', 'u5'],
     milestones: [],
     tasks: [],

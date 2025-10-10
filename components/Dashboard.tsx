@@ -20,6 +20,46 @@ const formatCurrencyINR = (value: number) => {
   return `₹${new Intl.NumberFormat('en-IN').format(value)}`;
 };
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        const budget = payload.find(p => p.dataKey === 'budget')?.value;
+        const spent = payload.find(p => p.dataKey === 'spent')?.value;
+        const overBudget = spent > budget;
+        const difference = Math.abs(spent - budget);
+
+        return (
+            <div className="bg-white p-3 border rounded-md shadow-lg text-sm">
+                <p className="font-bold text-neutral-dark mb-1">{label}</p>
+                <p style={{ color: '#4C9AFF' }}>Budget: {formatCurrencyINR(budget)}</p>
+                <p style={{ color: overBudget ? '#FF5630' : '#36B37E' }}>Spent: {formatCurrencyINR(spent)}</p>
+                {overBudget && (
+                    <p className="mt-1" style={{ color: '#FF5630' }}>
+                        Over budget by: {formatCurrencyINR(difference)}
+                    </p>
+                )}
+            </div>
+        );
+    }
+    return null;
+};
+
+const renderLegend = () => (
+    <div className="flex justify-center items-center space-x-4 mt-2 text-sm text-neutral-medium">
+        <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#4C9AFF' }}></div>
+            <span>Budget</span>
+        </div>
+        <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#36B37E' }}></div>
+            <span>Spent (Under Budget)</span>
+        </div>
+        <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#FF5630' }}></div>
+            <span>Spent (Over Budget)</span>
+        </div>
+    </div>
+);
+
 const Dashboard: React.FC<DashboardProps> = ({ navigateTo, projects }) => {
   const activeProjects = projects.filter(p => p.status === ProjectStatus.Active);
   const totalBudget = projects.reduce((sum, p) => sum + p.budget, 0);
@@ -82,10 +122,14 @@ const Dashboard: React.FC<DashboardProps> = ({ navigateTo, projects }) => {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis tickFormatter={(value) => formatCurrencyINR(Number(value))} />
-              <Tooltip formatter={(value) => `₹${new Intl.NumberFormat('en-IN').format(Number(value))}`}/>
-              <Legend />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend content={renderLegend} verticalAlign="bottom" wrapperStyle={{ paddingTop: '20px' }}/>
               <Bar dataKey="budget" fill="#4C9AFF" />
-              <Bar dataKey="spent" fill="#0052CC" />
+              <Bar dataKey="spent">
+                 {budgetData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.spent > entry.budget ? '#FF5630' : '#36B37E'} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </Card>
