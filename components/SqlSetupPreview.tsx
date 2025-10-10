@@ -125,7 +125,11 @@ inserted_profiles AS (
       WHEN u.email = 'manager@mep-dash.com' THEN 'Project Manager'::public.user_role
       WHEN u.email = 'engineer@mep-dash.com' THEN 'Site Engineer / Technician'::public.user_role
     END
-  FROM demo_users u ON CONFLICT (id) DO NOTHING
+  FROM demo_users u
+  ON CONFLICT (id) DO UPDATE SET
+    full_name = EXCLUDED.full_name,
+    avatar_url = EXCLUDED.avatar_url,
+    role = EXCLUDED.role
 ),
 inserted_projects AS (
   INSERT INTO public.projects (name, description, start_date, end_date, budget, spent, status, created_by)
