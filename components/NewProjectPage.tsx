@@ -10,7 +10,6 @@ type NewProjectFormData = {
   description: string;
   start_date: string;
   end_date: string;
-  budget: number;
   teamMemberIds: string[];
 };
 
@@ -23,7 +22,6 @@ const NewProjectPage: React.FC<NewProjectPageProps> = ({ onAddProject }) => {
   const [description, setDescription] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [budget, setBudget] = useState(0);
   const [allUsers, setAllUsers] = useState<Profile[]>([]);
   const [selectedTeamMemberIds, setSelectedTeamMemberIds] = useState<string[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -59,8 +57,8 @@ const NewProjectPage: React.FC<NewProjectPageProps> = ({ onAddProject }) => {
     e.preventDefault();
     if (isSubmitting) return;
 
-    if (!name || !startDate || !endDate || budget <= 0) {
-      alert('Please fill out all fields with valid values.');
+    if (!name || !startDate || !endDate) {
+      alert('Please fill out all required fields.');
       return;
     }
     if (new Date(startDate) > new Date(endDate)) {
@@ -74,7 +72,6 @@ const NewProjectPage: React.FC<NewProjectPageProps> = ({ onAddProject }) => {
       description,
       start_date: startDate,
       end_date: endDate,
-      budget,
       teamMemberIds: selectedTeamMemberIds,
     });
     setIsSubmitting(false);
@@ -130,18 +127,6 @@ const NewProjectPage: React.FC<NewProjectPageProps> = ({ onAddProject }) => {
                 required
               />
             </div>
-          </div>
-           <div>
-            <label htmlFor="projectBudget" className="block text-sm font-medium text-neutral-medium">Budget (₹)</label>
-            <input
-              type="number"
-              id="projectBudget"
-              value={budget}
-              onChange={(e) => setBudget(Number(e.target.value))}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
-              required
-              min="1"
-            />
           </div>
           <div>
             <label className="block text-sm font-medium text-neutral-medium">Assign Team Members</label>

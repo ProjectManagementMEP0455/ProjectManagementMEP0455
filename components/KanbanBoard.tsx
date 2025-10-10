@@ -12,16 +12,32 @@ interface KanbanBoardProps {
   userProfile: Profile | null;
 }
 
-const TaskCard: React.FC<{ task: Task; onEdit: () => void; assignee?: Profile | null }> = ({ task, onEdit, assignee }) => {
+const TaskCard: React.FC<{ task: Task; onEdit: () => void; }> = ({ task, onEdit }) => {
   return (
-    <Card className="mb-4 p-4 cursor-pointer hover:shadow-md" onClick={onEdit}>
-      <p className="font-semibold text-neutral-dark mb-2">{task.name}</p>
-      {assignee && (
-        <div className="flex items-center justify-end">
-            <Avatar profile={assignee} size="sm" />
+    <Card className="mb-4 p-4 cursor-pointer hover:shadow-md relative" onClick={onEdit}>
+      {task.pending_approval && (
+        <div className="absolute top-2 right-2 h-3 w-3 bg-status-yellow rounded-full" title="Cost approval pending"></div>
+      )}
+      <p className="font-semibold text-neutral-dark mb-2 pr-4">{task.name}</p>
+      
+      <div className="mt-2 pt-2 border-t text-sm">
+        <div className="flex justify-between items-center text-neutral-medium">
+          <span>Cost:</span>
+          <span className="font-semibold text-neutral-dark">
+            ₹{(task.spent_cost || 0).toLocaleString()} / ₹{(task.budgeted_cost || 0).toLocaleString()}
+          </span>
+        </div>
+        <p className="text-xs text-right text-neutral-medium mt-1">
+            Due: {task.due_date ? new Date(task.due_date).toLocaleDateString() : 'N/A'}
+        </p>
+      </div>
+
+      {task.assignee_id && (
+        <div className="absolute bottom-2 right-2">
+            <Avatar profile={{id: task.assignee_id, full_name: '', avatar_url: '', role: null }} size="sm" />
         </div>
       )}
-      <p className="text-sm text-neutral-medium mt-1">Due: {task.due_date ? new Date(task.due_date).toLocaleDateString() : 'N/A'}</p>
+      
     </Card>
   );
 };

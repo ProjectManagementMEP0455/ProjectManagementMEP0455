@@ -1,6 +1,9 @@
 
+
 import React, { useState } from 'react';
-import { Project, Task, Profile, Milestone, MilestoneInsert } from '../types';
+// FIX: Remove `Partial` from the import statement. It is a built-in TypeScript
+// utility type and does not need to be imported from the types file.
+import { Project, Task, Profile, Milestone, MilestoneInsert, UserRole } from '../types';
 import Card from './ui/Card';
 import Avatar from './ui/Avatar';
 import KanbanBoard from './KanbanBoard';
@@ -29,19 +32,27 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
 
     const teamMembers = project.teamMembers || [];
     
-    const handleAddTask = async (taskData: Omit<Task, 'id' | 'created_at' | 'project_id'>) => {
+    const handleAddTask = async (taskData: Omit<Task, 'id' | 'created_at' | 'project_id' | 'spent_cost' | 'proposed_spent_cost' | 'pending_approval'>) => {
         const { data, error } = await supabase
             .from('tasks')
-            .insert([{ ...taskData, project_id: project.id }])
+            .insert([{ 
+                ...taskData, 
+                project_id: project.id,
+                spent_cost: 0,
+                proposed_spent_cost: null,
+                pending_approval: false,
+            }])
             .select()
             .single();
 
         if (error) {
             alert('Error adding task: ' + error.message);
         } else if (data) {
-            const updatedTasks = [...project.tasks, data as Task];
-            const updatedProject = { ...project, tasks: updatedTasks };
-            onProjectUpdate(updatedProject);
+            // Refetch project data to get updated budget totals from trigger
+            const { data: updatedProjectData } = await supabase.from('projects').select('*, tasks(*)').eq('id', project.id).single();
+            if (updatedProjectData) {
+                onProjectUpdate({ ...project, tasks: updatedProjectData.tasks as Task[], budget: updatedProjectData.budget });
+            }
             setIsAddTaskModalOpen(false);
         }
     };
@@ -51,28 +62,22 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
         setIsEditTaskModalOpen(true);
     };
 
-    const handleTaskUpdate = async (updatedTask: Task) => {
+    const handleTaskUpdate = async (taskId: number, updateData: Partial<Task>) => {
         const { data, error } = await supabase
             .from('tasks')
-            .update({
-                name: updatedTask.name,
-                description: updatedTask.description,
-                status: updatedTask.status,
-                start_date: updatedTask.start_date,
-                due_date: updatedTask.due_date,
-                assignee_id: updatedTask.assignee_id,
-                percent_complete: updatedTask.percent_complete
-            })
-            .eq('id', updatedTask.id)
+            .update(updateData)
+            .eq('id', taskId)
             .select()
             .single();
 
         if (error) {
             alert('Error updating task: ' + error.message);
         } else if (data) {
-            const updatedTasks = project.tasks.map(t => t.id === data.id ? data as Task : t);
-            const updatedProject = { ...project, tasks: updatedTasks };
-            onProjectUpdate(updatedProject);
+             // Refetch project data to get updated budget/spent totals from trigger
+            const { data: updatedProjectData } = await supabase.from('projects').select('*, tasks(*)').eq('id', project.id).single();
+             if (updatedProjectData) {
+                onProjectUpdate({ ...project, tasks: updatedProjectData.tasks as Task[], budget: updatedProjectData.budget, spent: updatedProjectData.spent });
+            }
             setIsEditTaskModalOpen(false);
             setSelectedTask(null);
         }
@@ -200,14 +205,16 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
                 onClose={() => setIsAddTaskModalOpen(false)}
                 onAddTask={handleAddTask}
                 teamMembers={teamMembers}
+                userProfile={userProfile}
             />
             {selectedTask && (
                 <EditTaskModal
                     isOpen={isEditTaskModalOpen}
                     onClose={() => { setIsEditTaskModalOpen(false); setSelectedTask(null); }}
-                    onEditTask={handleTaskUpdate}
+                    onUpdateTask={handleTaskUpdate}
                     task={selectedTask}
                     teamMembers={teamMembers}
+                    userProfile={userProfile}
                 />
             )}
         </div>

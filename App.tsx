@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabaseClient';
@@ -17,7 +18,6 @@ type NewProjectFormData = {
   description:string;
   start_date: string;
   end_date: string;
-  budget: number;
   teamMemberIds: string[];
 };
 
@@ -122,7 +122,6 @@ const App: React.FC = () => {
                 description: projectData.description,
                 start_date: projectData.start_date,
                 end_date: projectData.end_date,
-                budget: projectData.budget,
                 status: ProjectStatus.Planning,
                 created_by: session.user.id,
             }])

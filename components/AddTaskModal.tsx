@@ -1,22 +1,26 @@
 
 import React, { useState, FormEvent, useEffect } from 'react';
-import { Task, TaskStatus, Profile } from '../types';
+import { Task, TaskStatus, Profile, UserRole } from '../types';
 
-type NewTaskData = Omit<Task, 'id' | 'created_at' | 'project_id'>;
+type NewTaskData = Omit<Task, 'id' | 'created_at' | 'project_id' | 'spent_cost' | 'proposed_spent_cost' | 'pending_approval'>;
 
 interface AddTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddTask: (taskData: NewTaskData) => void;
   teamMembers: Profile[];
+  userProfile: Profile | null;
 }
 
-const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask, teamMembers }) => {
+const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask, teamMembers, userProfile }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [startDate, setStartDate] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [budgetedCost, setBudgetedCost] = useState(0);
+
+  const isManager = userProfile && [UserRole.Admin, UserRole.ProjectDirector, UserRole.ProjectManager].includes(userProfile.role);
 
   useEffect(() => {
     if (isOpen) {
@@ -26,6 +30,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask,
       setAssigneeId(null);
       setStartDate(today);
       setDueDate('');
+      setBudgetedCost(0);
     }
   }, [isOpen]);
 
@@ -48,6 +53,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask,
       start_date: startDate,
       due_date: dueDate,
       percent_complete: 0,
+      budgeted_cost: budgetedCost,
     });
   };
 
@@ -119,6 +125,19 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask,
                 ))}
               </select>
             </div>
+             {isManager && (
+                <div>
+                    <label htmlFor="taskBudget" className="block text-sm font-medium text-neutral-medium">Budgeted Cost (₹)</label>
+                    <input
+                    type="number"
+                    id="taskBudget"
+                    value={budgetedCost}
+                    onChange={(e) => setBudgetedCost(Number(e.target.value))}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
+                    min="0"
+                    />
+                </div>
+            )}
           <div className="flex justify-end space-x-4 pt-4">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-neutral-dark bg-gray-200 rounded-md hover:bg-gray-300 transition-colors">
               Cancel

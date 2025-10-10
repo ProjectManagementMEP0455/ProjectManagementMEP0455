@@ -40,6 +40,10 @@ export interface Task {
   project_id: number; // foreign key to projects.id
   percent_complete: number | null;
   assignee?: Profile | null; // Optional, for joined data
+  budgeted_cost: number | null;
+  spent_cost: number | null;
+  proposed_spent_cost: number | null;
+  pending_approval: boolean;
 }
 
 export interface Milestone {
@@ -153,6 +157,10 @@ export type Database = {
           assignee_id: string | null;
           project_id: number;
           percent_complete: number | null;
+          budgeted_cost: number | null;
+          spent_cost: number | null;
+          proposed_spent_cost: number | null;
+          pending_approval: boolean;
         };
         // FIX: Expanded Insert and Update types to include all possible fields from Row.
         Insert: {
@@ -166,6 +174,10 @@ export type Database = {
           due_date?: string | null;
           assignee_id?: string | null;
           percent_complete?: number | null;
+          budgeted_cost?: number | null;
+          spent_cost?: number | null;
+          proposed_spent_cost?: number | null;
+          pending_approval?: boolean;
         };
         Update: {
           id?: number;
@@ -178,6 +190,10 @@ export type Database = {
           assignee_id?: string | null;
           project_id?: number;
           percent_complete?: number | null;
+          budgeted_cost?: number | null;
+          spent_cost?: number | null;
+          proposed_spent_cost?: number | null;
+          pending_approval?: boolean;
         };
       };
       milestones: {
