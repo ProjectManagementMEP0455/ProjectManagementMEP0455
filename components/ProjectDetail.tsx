@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 // FIX: Remove `Partial` from the import statement. It is a built-in TypeScript
 // utility type and does not need to be imported from the types file.
@@ -15,6 +13,7 @@ import { supabase } from '../lib/supabaseClient';
 import RiskAnalysis from './RiskAnalysis';
 import ResourceView from './ResourceView';
 import ModelsView from './ModelsView';
+import BudgetView from './BudgetView';
 
 interface ProjectDetailProps {
   project: Project;
@@ -22,7 +21,7 @@ interface ProjectDetailProps {
   userProfile: Profile | null;
 }
 
-type Tab = 'tasks' | 'timeline' | 'milestones' | 'risks' | 'resources' | 'models';
+type Tab = 'tasks' | 'timeline' | 'milestones' | 'risks' | 'resources' | 'models' | 'budget';
 
 const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate, userProfile }) => {
     const [activeTab, setActiveTab] = useState<Tab>('tasks');
@@ -127,6 +126,8 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
                 return <ResourceView project={project} />;
             case 'models':
                 return <ModelsView project={project} />;
+            case 'budget':
+                return <BudgetView project={project} />;
             default:
                 return null;
         }
@@ -138,6 +139,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
 
     const tabs: {id: Tab, label: string}[] = [
         { id: 'tasks', label: 'Tasks' },
+        { id: 'budget', label: 'Budget' },
         { id: 'timeline', label: 'Timeline' },
         { id: 'milestones', label: 'Milestones' },
         { id: 'risks', label: 'Risk Analysis' },
