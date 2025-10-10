@@ -1,65 +1,45 @@
-
 import React from 'react';
 import { Page } from '../types';
-import { ICONS } from '../constants';
 
 interface SidebarProps {
   currentPage: Page;
   navigateTo: (page: Page) => void;
 }
 
-const NavItem: React.FC<{ icon: React.ReactNode; label: string; isActive: boolean; onClick: () => void; }> = ({ icon, label, isActive, onClick }) => (
-  <li
-    onClick={onClick}
-    className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-all duration-200 ${
-      isActive ? 'bg-brand-dark text-white shadow-md' : 'text-gray-300 hover:bg-brand-primary/80 hover:text-white'
-    }`}
-  >
-    {icon}
-    <span className="font-medium">{label}</span>
-  </li>
-);
+const ICONS = {
+    dashboard: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5h16M4 12h16M4 19h16" /></svg>,
+    projects: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2z" /></svg>,
+}
 
 const Sidebar: React.FC<SidebarProps> = ({ currentPage, navigateTo }) => {
+  const navItems = [
+    { page: Page.Dashboard, label: 'Dashboard', icon: ICONS.dashboard },
+    { page: Page.Projects, label: 'Projects', icon: ICONS.projects },
+  ];
+
   return (
-    <aside className="w-64 bg-brand-primary text-white flex flex-col p-4">
-      <div className="flex items-center space-x-2 p-3 mb-8">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-brand-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 16v-2m0-8v-2m0 4h.01M6 12h.01M18 12h.01M6 18H4m16 0h-2m0-12h-2M6 6H4m16 0h-2m-4 8a4 4 0 11-8 0 4 4 0 018 0z" />
-        </svg>
-        <h1 className="text-xl font-bold">MEP Pro</h1>
+    <aside className="w-64 bg-neutral-dark text-white flex flex-col">
+      <div className="h-20 flex items-center justify-center text-2xl font-bold text-brand-primary">
+        MEP-Dash
       </div>
-      <nav className="flex-1">
-        <ul className="space-y-2">
-          <NavItem
-            icon={ICONS.dashboard}
-            label="Dashboard"
-            isActive={currentPage === Page.Dashboard}
-            onClick={() => navigateTo(Page.Dashboard)}
-          />
-          <NavItem
-            icon={ICONS.projects}
-            label="Projects"
-            isActive={currentPage === Page.Projects || currentPage === Page.ProjectDetail}
-            onClick={() => navigateTo(Page.Projects)}
-          />
-        </ul>
+      <nav className="flex-1 px-4 py-6 space-y-2">
+        {navItems.map(item => (
+          <button
+            key={item.page}
+            onClick={() => navigateTo(item.page)}
+            className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${
+              currentPage === item.page
+                ? 'bg-brand-primary text-white'
+                : 'text-neutral-light hover:bg-neutral-medium hover:text-white'
+            }`}
+          >
+            <span className="mr-3">{item.icon}</span>
+            <span className="font-semibold">{item.label}</span>
+          </button>
+        ))}
       </nav>
-      <div className="mt-auto">
-         <ul className="space-y-2">
-           <NavItem
-            icon={ICONS.settings}
-            label="Settings"
-            isActive={false}
-            onClick={() => {}}
-          />
-           <NavItem
-            icon={ICONS.logout}
-            label="Logout"
-            isActive={false}
-            onClick={() => {}}
-          />
-         </ul>
+      <div className="p-4 border-t border-neutral-medium">
+        <p className="text-sm text-neutral-light">&copy; 2024 MEP-Dash Inc.</p>
       </div>
     </aside>
   );
