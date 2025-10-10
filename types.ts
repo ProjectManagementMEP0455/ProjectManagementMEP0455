@@ -41,8 +41,10 @@ export interface Milestone {
 }
 
 export interface ProjectTeamMember {
-  project_id: number;
-  user_id: string; // uuid
+  // FIX: The query in App.tsx only fetches the profile, not the IDs from the junction table.
+  // This aligns the type with the actual data being returned.
+  // project_id: number;
+  // user_id: string; // uuid
   profile: Profile;
 }
 
@@ -192,8 +194,9 @@ export type Database = {
       [_ in never]: never;
     };
     Enums: {
-      project_status: 'Planning' | 'Active' | 'On Hold' | 'Completed';
-      task_status: 'To Do' | 'In Progress' | 'Done';
+      // FIX: The schema does not define any enum types; status columns are `text`.
+      // This was causing the Supabase client to fail type inference.
+      [_ in never]: never;
     };
     CompositeTypes: {
       [_ in never]: never;
