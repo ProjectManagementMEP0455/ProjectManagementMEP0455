@@ -7,7 +7,8 @@ const fullSqlScript = `
 -- entire database from scratch. It is safe to run multiple times.
 --
 -- INSTRUCTIONS:
--- 1. Create the 3 demo users in the Auth section:
+-- 1. Create the 4 demo users in the Auth section:
+--    - admin@mep-dash.com
 --    - director@mep-dash.com
 --    - manager@mep-dash.com
 --    - engineer@mep-dash.com
@@ -15,6 +16,7 @@ const fullSqlScript = `
 ----------------------------------------------------------------
 
 -- PART 0: CLEANUP (Drop existing objects if they exist)
+DROP FUNCTION IF EXISTS public.is_admin(uuid) CASCADE;
 DROP FUNCTION IF EXISTS public.is_member_of_project(bigint, uuid) CASCADE;
 DROP TABLE IF EXISTS public.milestones CASCADE;
 DROP TABLE IF EXISTS public.tasks CASCADE;
@@ -26,7 +28,7 @@ DROP TYPE IF EXISTS public.project_status;
 DROP TYPE IF EXISTS public.user_role;
 
 -- PART 1: CREATE TABLES & CUSTOM TYPES
-CREATE TYPE public.user_role AS ENUM ('Project Director', 'Project Manager', 'Assistant Project Manager', 'Engineer / Supervisor', 'Site Engineer / Technician');
+CREATE TYPE public.user_role AS ENUM ('Admin', 'Project Director', 'Project Manager', 'Assistant Project Manager', 'Engineer / Supervisor', 'Site Engineer / Technician');
 CREATE TYPE public.project_status AS ENUM ('Active', 'Planning', 'Completed', 'On Hold');
 CREATE TYPE public.task_status AS ENUM ('To Do', 'In Progress', 'Done');
 
@@ -74,6 +76,19 @@ CREATE TABLE public.milestones (
 );
 
 -- PART 2: HELPER FUNCTIONS & RLS
+-- Helper function to check if a user is an admin
+CREATE OR REPLACE FUNCTION public.is_admin(u_id uuid)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM profiles
+    WHERE id = u_id AND role = 'Admin'::public.user_role
+  );
+$$;
+
 -- Helper function to check project membership to avoid RLS recursion
 CREATE OR REPLACE FUNCTION public.is_member_of_project(p_id bigint, u_id uuid)
 RETURNS boolean
@@ -96,49 +111,56 @@ ALTER TABLE public.milestones ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Public profiles are viewable by everyone." ON public.profiles FOR SELECT USING (true);
 CREATE POLICY "Users can insert their own profile." ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
-CREATE POLICY "Users can update their own profile." ON public.profiles FOR UPDATE USING (auth.uid() = id);
-CREATE POLICY "Users can view projects they are a member of." ON public.projects FOR SELECT USING (EXISTS (SELECT 1 FROM public.project_team_members WHERE project_team_members.project_id = projects.id AND project_team_members.user_id = auth.uid()));
-CREATE POLICY "Directors/Managers can create projects." ON public.projects FOR INSERT WITH CHECK (((SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('Project Director'::public.user_role, 'Project Manager'::public.user_role)));
-CREATE POLICY "Directors/Managers can update projects." ON public.projects FOR UPDATE USING (((SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('Project Director'::public.user_role, 'Project Manager'::public.user_role)) AND EXISTS (SELECT 1 FROM public.project_team_members WHERE project_team_members.project_id = projects.id AND project_team_members.user_id = auth.uid()));
+CREATE POLICY "Users can update their own profile or Admins can update any." ON public.profiles FOR UPDATE USING (auth.uid() = id OR public.is_admin(auth.uid()));
 
--- FIX: Replaced recursive policies with ones using a SECURITY DEFINER function to prevent infinite recursion error.
-CREATE POLICY "Team members can view who is on their project." ON public.project_team_members FOR SELECT USING (public.is_member_of_project(project_id, auth.uid()));
-CREATE POLICY "Directors/Managers can add/remove team members." ON public.project_team_members FOR ALL USING (((SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('Project Director'::public.user_role, 'Project Manager'::public.user_role)) AND public.is_member_of_project(project_id, auth.uid()));
+CREATE POLICY "Admins or team members can view projects." ON public.projects FOR SELECT USING (public.is_member_of_project(id, auth.uid()) OR public.is_admin(auth.uid()));
+CREATE POLICY "Admins/Directors/Managers can create projects." ON public.projects FOR INSERT WITH CHECK (((SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('Admin'::public.user_role, 'Project Director'::public.user_role, 'Project Manager'::public.user_role)));
+CREATE POLICY "Admins or team Directors/Managers can update projects." ON public.projects FOR UPDATE USING ((public.is_member_of_project(id, auth.uid()) AND (SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('Project Director'::public.user_role, 'Project Manager'::public.user_role)) OR public.is_admin(auth.uid()));
 
-CREATE POLICY "Team members can view tasks on their projects." ON public.tasks FOR SELECT USING (EXISTS (SELECT 1 FROM public.project_team_members WHERE project_team_members.project_id = tasks.project_id AND project_team_members.user_id = auth.uid()));
-CREATE POLICY "Team members can create and update tasks." ON public.tasks FOR ALL USING (EXISTS (SELECT 1 FROM public.project_team_members WHERE project_team_members.project_id = tasks.project_id AND project_team_members.user_id = auth.uid()));
-CREATE POLICY "Team members can view milestones." ON public.milestones FOR SELECT USING (EXISTS (SELECT 1 FROM public.project_team_members WHERE project_team_members.project_id = milestones.project_id AND project_team_members.user_id = auth.uid()));
-CREATE POLICY "Managers can manage milestones." ON public.milestones FOR ALL USING (((SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('Project Director'::public.user_role, 'Project Manager'::public.user_role, 'Assistant Project Manager'::public.user_role)) AND EXISTS (SELECT 1 FROM public.project_team_members WHERE project_team_members.project_id = milestones.project_id AND project_team_members.user_id = auth.uid()));
+CREATE POLICY "Admins or team members can view project members." ON public.project_team_members FOR SELECT USING (public.is_member_of_project(project_id, auth.uid()) OR public.is_admin(auth.uid()));
+CREATE POLICY "Admins or team Directors/Managers can manage team." ON public.project_team_members FOR ALL USING (((public.is_member_of_project(project_id, auth.uid()) AND (SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('Project Director'::public.user_role, 'Project Manager'::public.user_role))) OR public.is_admin(auth.uid()));
+
+CREATE POLICY "Admins or team members can view tasks." ON public.tasks FOR SELECT USING (public.is_member_of_project(project_id, auth.uid()) OR public.is_admin(auth.uid()));
+CREATE POLICY "Admins or team members can manage tasks." ON public.tasks FOR ALL USING (public.is_member_of_project(project_id, auth.uid()) OR public.is_admin(auth.uid()));
+
+CREATE POLICY "Admins or team members can view milestones." ON public.milestones FOR SELECT USING (public.is_member_of_project(project_id, auth.uid()) OR public.is_admin(auth.uid()));
+CREATE POLICY "Admins or team Managers can manage milestones." ON public.milestones FOR ALL USING (((public.is_member_of_project(project_id, auth.uid()) AND (SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('Project Director'::public.user_role, 'Project Manager'::public.user_role, 'Assistant Project Manager'::public.user_role))) OR public.is_admin(auth.uid()));
+
 
 -- PART 3: PRE-FLIGHT CHECK & SAMPLE DATA INSERTION
 DO $$
 BEGIN
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = 'admin@mep-dash.com') THEN
+    RAISE EXCEPTION 'SETUP FAILED: Demo user "admin@mep-dash.com" not found. Please create the four required demo users in the "Authentication" section and run this script again.';
+  END IF;
   IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = 'director@mep-dash.com') THEN
-    RAISE EXCEPTION 'SETUP FAILED: Demo user "director@mep-dash.com" not found. Please create the three required demo users in the "Authentication" section and run this script again.';
+    RAISE EXCEPTION 'SETUP FAILED: Demo user "director@mep-dash.com" not found. Please create the four required demo users in the "Authentication" section and run this script again.';
   END IF;
   IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = 'manager@mep-dash.com') THEN
-    RAISE EXCEPTION 'SETUP FAILED: Demo user "manager@mep-dash.com" not found. Please create the three required demo users in the "Authentication" section and run this script again.';
+    RAISE EXCEPTION 'SETUP FAILED: Demo user "manager@mep-dash.com" not found. Please create the four required demo users in the "Authentication" section and run this script again.';
   END IF;
   IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = 'engineer@mep-dash.com') THEN
-    RAISE EXCEPTION 'SETUP FAILED: Demo user "engineer@mep-dash.com" not found. Please create the three required demo users in the "Authentication" section and run this script again.';
+    RAISE EXCEPTION 'SETUP FAILED: Demo user "engineer@mep-dash.com" not found. Please create the four required demo users in the "Authentication" section and run this script again.';
   END IF;
 END $$;
 
 WITH demo_users AS (
   SELECT id, email FROM auth.users
-  WHERE email IN ('director@mep-dash.com', 'manager@mep-dash.com', 'engineer@mep-dash.com')
+  WHERE email IN ('admin@mep-dash.com', 'director@mep-dash.com', 'manager@mep-dash.com', 'engineer@mep-dash.com')
 ),
 inserted_profiles AS (
   INSERT INTO public.profiles (id, full_name, avatar_url, role)
   SELECT
     u.id,
     CASE
+      WHEN u.email = 'admin@mep-dash.com' THEN 'Sam Admin'
       WHEN u.email = 'director@mep-dash.com' THEN 'Alex Director'
       WHEN u.email = 'manager@mep-dash.com' THEN 'Brianna Manager'
       WHEN u.email = 'engineer@mep-dash.com' THEN 'Charlie Engineer'
     END,
     'https://i.pravatar.cc/150?u=' || u.email,
     CASE
+      WHEN u.email = 'admin@mep-dash.com' THEN 'Admin'::public.user_role
       WHEN u.email = 'director@mep-dash.com' THEN 'Project Director'::public.user_role
       WHEN u.email = 'manager@mep-dash.com' THEN 'Project Manager'::public.user_role
       WHEN u.email = 'engineer@mep-dash.com' THEN 'Site Engineer / Technician'::public.user_role

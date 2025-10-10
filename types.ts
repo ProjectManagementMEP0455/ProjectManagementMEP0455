@@ -1,5 +1,6 @@
 
 export enum UserRole {
+  Admin = 'Admin',
   ProjectDirector = 'Project Director',
   ProjectManager = 'Project Manager',
   AssistantProjectManager = 'Assistant Project Manager',
@@ -77,6 +78,7 @@ export enum Page {
   Projects = 'projects',
   ProjectDetail = 'project-detail',
   NewProject = 'new-project',
+  AdminPanel = 'admin-panel',
 }
 
 export type Database = {

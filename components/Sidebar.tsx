@@ -13,6 +13,7 @@ const ICONS = {
     projects: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2z" /></svg>,
     newProject: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
     sqlEditor: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>,
+    admin: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.096 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ currentPage, navigateTo, userProfile }) => {
@@ -20,10 +21,14 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, navigateTo, userProfile 
     { page: Page.Dashboard, label: 'Dashboard', icon: ICONS.dashboard, requiredRole: null },
     { page: Page.Projects, label: 'Projects', icon: ICONS.projects, requiredRole: null },
     { page: Page.NewProject, label: 'New Project', icon: ICONS.newProject, requiredRole: UserRole.ProjectDirector },
+    { page: Page.AdminPanel, label: 'Admin Panel', icon: ICONS.admin, requiredRole: UserRole.Admin },
   ];
 
   const visibleNavItems = navItems.filter(item => {
-    return !item.requiredRole || userProfile?.role === item.requiredRole;
+    if (!item.requiredRole) return true;
+    // Admins can see everything except pages specifically for other roles (like New Project for Director)
+    if (userProfile?.role === UserRole.Admin && item.requiredRole === UserRole.Admin) return true;
+    return userProfile?.role === item.requiredRole;
   });
   
   const getSqlEditorUrl = () => {
@@ -62,7 +67,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, navigateTo, userProfile 
             <span className="font-semibold">{item.label}</span>
           </button>
         ))}
-        {userProfile?.role === UserRole.ProjectDirector && sqlEditorUrl && (
+        {(userProfile?.role === UserRole.ProjectDirector || userProfile?.role === UserRole.Admin) && sqlEditorUrl && (
             <a
                 href={sqlEditorUrl}
                 target="_blank"

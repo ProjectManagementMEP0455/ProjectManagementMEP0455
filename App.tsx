@@ -11,6 +11,7 @@ import ProjectList from './components/ProjectList';
 import ProjectDetail from './components/ProjectDetail';
 import SetupPage from './components/SetupPage';
 import NewProjectPage from './components/NewProjectPage';
+import AdminPanel from './components/AdminPanel';
 
 type NewProjectFormData = {
   name: string;
@@ -71,6 +72,7 @@ const App: React.FC = () => {
       setUserProfile(profileData);
 
       // Fetch projects with related data using a more robust query
+      // Admins will see all projects due to RLS policies; other users will only see their own.
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select(`
@@ -201,6 +203,8 @@ const App: React.FC = () => {
         return selectedProject ? <ProjectDetail userProfile={userProfile} project={selectedProject} onProjectUpdate={handleProjectUpdate} /> : <div>Project not found</div>;
       case Page.NewProject:
         return <NewProjectPage onAddProject={handleAddProject} />;
+      case Page.AdminPanel:
+        return <AdminPanel currentUserProfile={userProfile} />;
       case Page.Dashboard:
       default:
         return <Dashboard navigateTo={navigateTo} projects={projects} />;
