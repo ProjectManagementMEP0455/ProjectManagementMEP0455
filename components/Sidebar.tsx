@@ -1,21 +1,29 @@
+
 import React from 'react';
-import { Page } from '../types';
+import { Page, Profile, UserRole } from '../types';
 
 interface SidebarProps {
   currentPage: Page;
   navigateTo: (page: Page) => void;
+  userProfile: Profile | null;
 }
 
 const ICONS = {
     dashboard: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5h16M4 12h16M4 19h16" /></svg>,
     projects: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2z" /></svg>,
+    newProject: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentPage, navigateTo }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentPage, navigateTo, userProfile }) => {
   const navItems = [
-    { page: Page.Dashboard, label: 'Dashboard', icon: ICONS.dashboard },
-    { page: Page.Projects, label: 'Projects', icon: ICONS.projects },
+    { page: Page.Dashboard, label: 'Dashboard', icon: ICONS.dashboard, requiredRole: null },
+    { page: Page.Projects, label: 'Projects', icon: ICONS.projects, requiredRole: null },
+    { page: Page.NewProject, label: 'New Project', icon: ICONS.newProject, requiredRole: UserRole.ProjectDirector },
   ];
+
+  const visibleNavItems = navItems.filter(item => {
+    return !item.requiredRole || userProfile?.role === item.requiredRole;
+  });
 
   return (
     <aside className="w-64 bg-neutral-dark text-white flex flex-col">
@@ -23,7 +31,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, navigateTo }) => {
         MEP-Dash
       </div>
       <nav className="flex-1 px-4 py-6 space-y-2">
-        {navItems.map(item => (
+        {visibleNavItems.map(item => (
           <button
             key={item.page}
             onClick={() => navigateTo(item.page)}

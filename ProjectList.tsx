@@ -1,1 +1,2 @@
-full contents of ProjectList.tsx
+// This file is not currently used in the application.
+export {};

@@ -76,6 +76,7 @@ export enum Page {
   Dashboard = 'dashboard',
   Projects = 'projects',
   ProjectDetail = 'project-detail',
+  NewProject = 'new-project',
 }
 
 export type Database = {
@@ -84,7 +85,6 @@ export type Database = {
       profiles: {
         Row: Profile;
         Insert: Omit<Profile, 'id'>;
-        // FIX: Update type now correctly omits the non-updatable 'id' field.
         Update: {
           full_name?: string | null;
           avatar_url?: string | null;
@@ -101,7 +101,8 @@ export type Database = {
           end_date: string | null;
           budget: number | null;
           spent: number | null;
-          status: string;
+          // FIX: Changed type from string to ProjectStatus enum for better type safety.
+          status: ProjectStatus;
           created_by: string;
         };
         Insert: {
@@ -112,9 +113,9 @@ export type Database = {
           end_date?: string | null;
           budget?: number | null;
           spent?: number | null;
-          status?: string;
+          // FIX: Changed type from string to ProjectStatus enum for better type safety.
+          status?: ProjectStatus;
         };
-        // FIX: Update type now correctly omits non-updatable fields like 'id', 'created_at', and 'created_by'.
         Update: {
           name?: string;
           description?: string | null;
@@ -122,7 +123,8 @@ export type Database = {
           end_date?: string | null;
           budget?: number | null;
           spent?: number | null;
-          status?: string;
+          // FIX: Changed type from string to ProjectStatus enum for better type safety.
+          status?: ProjectStatus;
         };
       };
       tasks: {
@@ -131,7 +133,8 @@ export type Database = {
           created_at: string;
           name: string;
           description: string | null;
-          status: string;
+          // FIX: Changed type from string to TaskStatus enum for better type safety.
+          status: TaskStatus;
           due_date: string | null;
           assignee_id: string | null;
           project_id: number;
@@ -141,16 +144,17 @@ export type Database = {
           name: string;
           project_id: number;
           description?: string | null;
-          status?: string;
+          // FIX: Changed type from string to TaskStatus enum for better type safety.
+          status?: TaskStatus;
           due_date?: string | null;
           assignee_id?: string | null;
           percent_complete?: number | null;
         };
-        // FIX: Update type now correctly omits non-updatable fields like 'id', 'created_at', and 'project_id'.
         Update: {
           name?: string;
           description?: string | null;
-          status?: string;
+          // FIX: Changed type from string to TaskStatus enum for better type safety.
+          status?: TaskStatus;
           due_date?: string | null;
           assignee_id?: string | null;
           percent_complete?: number | null;
@@ -171,7 +175,6 @@ export type Database = {
             project_id: number;
             completed?: boolean;
         };
-        // FIX: Update type now correctly omits non-updatable fields like 'id', 'created_at', and 'project_id'.
         Update: {
             name?: string;
             due_date?: string;
@@ -187,8 +190,6 @@ export type Database = {
           project_id: number;
           user_id: string;
         };
-        // FIX: Changed 'never' to '{}' to prevent potential issues with Supabase type inference engine.
-        // An empty object indicates no fields are updatable, which is more compatible than 'never'.
         Update: {};
       };
     };

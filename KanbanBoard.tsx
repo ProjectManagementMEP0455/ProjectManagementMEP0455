@@ -1,1 +1,2 @@
-full contents of components/KanbanBoard.tsx
+// This file is not currently used in the application.
+export {};

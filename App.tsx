@@ -9,10 +9,9 @@ import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import ProjectList from './components/ProjectList';
 import ProjectDetail from './components/ProjectDetail';
-import AddProjectModal from './components/AddProjectModal';
 import SetupPage from './components/SetupPage';
+import NewProjectPage from './components/NewProjectPage';
 
-// FIX: Define a type for the data coming from the AddProjectModal form.
 type NewProjectFormData = {
   name: string;
   description: string;
@@ -30,7 +29,6 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState<Page>(Page.Dashboard);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
-  const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
 
   useEffect(() => {
     const supabaseUrl = localStorage.getItem('supabaseUrl');
@@ -87,7 +85,6 @@ const App: React.FC = () => {
         
       if (projectsError) throw projectsError;
 
-      // FIX: Cast p to any to resolve incorrect type inference from complex select query.
       const formattedProjects = (projectsData || []).map((p: any) => ({
         ...p,
         status: p.status as ProjectStatus,
@@ -113,9 +110,6 @@ const App: React.FC = () => {
   const handleAddProject = async (projectData: NewProjectFormData) => {
     if (!session?.user) return;
     try {
-        // 1. Insert into projects table
-        // FIX: Wrap insert data in an array to resolve Supabase type inference issue.
-        // This ensures `newProject` is correctly typed and subsequent property access (e.g., `newProject.id`) is valid.
         const { data: newProject, error: projectError } = await supabase
             .from('projects')
             .insert([{
@@ -137,8 +131,6 @@ const App: React.FC = () => {
             return;
         }
 
-        // 2. Insert into project_team_members table
-        // Add the creator to the team by default
         const creatorId = session.user.id;
         const finalTeamMemberIds = projectData.teamMemberIds.includes(creatorId)
             ? projectData.teamMemberIds
@@ -157,9 +149,9 @@ const App: React.FC = () => {
             if (teamError) throw teamError;
         }
 
-        // 3. Refresh data
         await fetchAllData(session.user.id);
-        setIsAddProjectModalOpen(false);
+        // Navigate to the projects list after successful creation
+        navigateTo(Page.Projects);
 
     } catch (error: any) {
         alert("Error adding project: " + error.message);
@@ -200,9 +192,11 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (currentPage) {
       case Page.Projects:
-        return <ProjectList userProfile={userProfile} navigateTo={navigateTo} projects={projects} onOpenAddProjectModal={() => setIsAddProjectModalOpen(true)} />;
+        return <ProjectList userProfile={userProfile} navigateTo={navigateTo} projects={projects} />;
       case Page.ProjectDetail:
         return selectedProject ? <ProjectDetail userProfile={userProfile} project={selectedProject} onProjectUpdate={handleProjectUpdate} /> : <div>Project not found</div>;
+      case Page.NewProject:
+        return <NewProjectPage onAddProject={handleAddProject} />;
       case Page.Dashboard:
       default:
         return <Dashboard navigateTo={navigateTo} projects={projects} />;
@@ -211,18 +205,13 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <Sidebar currentPage={currentPage} navigateTo={navigateTo} />
+      <Sidebar currentPage={currentPage} navigateTo={navigateTo} userProfile={userProfile} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header user={userProfile} />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-8">
             {renderContent()}
         </main>
       </div>
-      <AddProjectModal 
-        isOpen={isAddProjectModalOpen}
-        onClose={() => setIsAddProjectModalOpen(false)}
-        onAddProject={handleAddProject}
-      />
     </div>
   );
 };

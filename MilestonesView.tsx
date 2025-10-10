@@ -1,1 +1,2 @@
-full contents of components/MilestonesView.tsx
+// This file is not currently used in the application.
+export {};
