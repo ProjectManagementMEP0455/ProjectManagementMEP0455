@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 
-// The SQL schema is included here directly to avoid file loading complexities.
-const sqlSchema = `-- MEP PROJECT MANAGEMENT PRO - SUPABASE SCHEMA
+interface SetupPageProps {
+  onConfigured: () => void;
+}
+
+const supabaseSchema = `
+-- MEP PROJECT MANAGEMENT PRO - SUPABASE SCHEMA
 -- version 1.2 (Idempotent)
 -- This script can be run multiple times without causing errors.
 
@@ -105,7 +109,7 @@ drop policy if exists "Project creator can update their project." on public.proj
 create policy "Project creator can update their project." on public.projects for update using (auth.uid() = created_by);
 
 drop policy if exists "Authenticated users can create projects." on public.projects;
-create policy "Authenticated users can create projects." on public.projects for insert with check (auth.role() = 'authenticated');
+create policy "Authenticated users can create projects." on public.projects for insert with check (auth.uid() = created_by);
 
 drop policy if exists "Project creator can delete their project." on public.projects;
 create policy "Project creator can delete their project." on public.projects for delete using (auth.uid() = created_by);
@@ -190,101 +194,107 @@ create trigger on_project_created
   for each row execute procedure public.add_creator_to_team();
 `;
 
-interface SetupPageProps {
-  onConfigured: () => void;
-}
-
 const SetupPage: React.FC<SetupPageProps> = ({ onConfigured }) => {
   const [supabaseUrl, setSupabaseUrl] = useState('');
   const [supabaseAnonKey, setSupabaseAnonKey] = useState('');
-  const [copyButtonText, setCopyButtonText] = useState('Copy SQL');
+  const [step, setStep] = useState(1);
+  const [copied, setCopied] = useState(false);
 
-  const handleSave = () => {
-    if (!supabaseUrl.startsWith('http') || supabaseAnonKey.length < 50) {
-      alert('Please enter a valid Supabase URL and Anon Key.');
-      return;
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (supabaseUrl && supabaseAnonKey) {
+      localStorage.setItem('supabaseUrl', supabaseUrl);
+      localStorage.setItem('supabaseAnonKey', supabaseAnonKey);
+      onConfigured();
+    } else {
+      alert('Please provide both a Supabase URL and an Anon Key.');
     }
-    localStorage.setItem('supabaseUrl', supabaseUrl);
-    localStorage.setItem('supabaseAnonKey', supabaseAnonKey);
-    onConfigured();
   };
-
-  const handleCopySql = () => {
-    navigator.clipboard.writeText(sqlSchema);
-    setCopyButtonText('Copied!');
-    setTimeout(() => setCopyButtonText('Copy SQL'), 2000);
-  };
+  
+  const handleCopy = () => {
+      navigator.clipboard.writeText(supabaseSchema.trim());
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+  }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 font-sans p-4">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-4xl max-h-[95vh] flex flex-col">
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 font-sans">
+      <div className="p-8 bg-white rounded-lg shadow-md w-full max-w-2xl">
         <h1 className="text-3xl font-bold text-center text-brand-primary mb-2">MEP-Dash Setup</h1>
-        <p className="text-center text-neutral-medium mb-6">
-          Welcome! To get started, please configure your Supabase backend.
-        </p>
+        <p className="text-center text-neutral-medium mb-8">Let's connect to your Supabase project.</p>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-grow overflow-hidden">
-          {/* Left Column: Instructions & Inputs */}
-          <div className="flex flex-col space-y-6">
+        {step === 1 && (
             <div>
-              <h2 className="text-xl font-semibold text-neutral-dark mb-2">Step 1: Configure Credentials</h2>
-              <p className="text-sm text-neutral-medium mb-4">
-                Find your Project URL and public anon key in your Supabase Dashboard under <code className="bg-gray-200 p-1 rounded">Settings &gt; API</code>.
-              </p>
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="supabaseUrl" className="block text-sm font-medium text-neutral-medium">Supabase Project URL</label>
-                  <input
-                    type="url"
-                    id="supabaseUrl"
-                    placeholder="https://your-project-id.supabase.co"
-                    value={supabaseUrl}
-                    onChange={(e) => setSupabaseUrl(e.target.value)}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
-                  />
+                <h2 className="text-xl font-semibold text-neutral-dark mb-4">Step 1: Database Schema</h2>
+                <p className="text-neutral-medium mb-4">
+                    First, you need to set up your database. Go to the <a href="https://supabase.com/dashboard/project/_/sql" target="_blank" rel="noopener noreferrer" className="text-brand-primary hover:underline">SQL Editor</a> in your Supabase project dashboard and run the following script.
+                </p>
+                <div className="relative">
+                    <textarea
+                        readOnly
+                        className="w-full h-48 p-2 border border-gray-300 rounded-md bg-gray-50 font-mono text-sm"
+                        value={supabaseSchema.trim()}
+                    />
+                    <button 
+                        onClick={handleCopy}
+                        className="absolute top-2 right-2 bg-gray-200 hover:bg-gray-300 text-neutral-dark text-sm font-semibold py-1 px-2 rounded-md"
+                    >
+                        {copied ? 'Copied!' : 'Copy'}
+                    </button>
                 </div>
-                <div>
-                  <label htmlFor="supabaseAnonKey" className="block text-sm font-medium text-neutral-medium">Supabase Public Anon Key</label>
-                  <input
-                    type="text"
-                    id="supabaseAnonKey"
-                    placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..."
-                    value={supabaseAnonKey}
-                    onChange={(e) => setSupabaseAnonKey(e.target.value)}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
-                  />
+                <div className="mt-6 flex justify-end">
+                    <button onClick={() => setStep(2)} className="w-full sm:w-auto bg-brand-primary text-white font-bold py-2 px-6 rounded-lg hover:bg-brand-dark transition-colors">
+                        Next Step
+                    </button>
                 </div>
-              </div>
             </div>
-             <button
-                onClick={handleSave}
-                className="w-full bg-brand-primary text-white font-bold py-3 px-4 rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-50"
-              >
-                Save Credentials and Launch
-            </button>
-          </div>
+        )}
 
-          {/* Right Column: SQL Schema */}
-          <div className="flex flex-col overflow-hidden">
-            <div className="flex justify-between items-center mb-2">
-                 <h2 className="text-xl font-semibold text-neutral-dark">Step 2: Set Up Database</h2>
-                 <button
-                    onClick={handleCopySql}
-                    className="px-4 py-2 text-sm font-medium text-white bg-status-green rounded-md hover:bg-green-700 transition-colors"
-                  >
-                    {copyButtonText}
-                </button>
+        {step === 2 && (
+            <div>
+                 <h2 className="text-xl font-semibold text-neutral-dark mb-4">Step 2: API Credentials</h2>
+                 <p className="text-neutral-medium mb-4">
+                    Now, enter your Supabase project's API URL and Anon Key. You can find these in your project's <a href="https://supabase.com/dashboard/project/_/settings/api" target="_blank" rel="noopener noreferrer" className="text-brand-primary hover:underline">API Settings</a>.
+                 </p>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-neutral-medium" htmlFor="supabaseUrl">Project URL</label>
+                    <input
+                      id="supabaseUrl"
+                      type="text"
+                      placeholder="https://your-project-id.supabase.co"
+                      value={supabaseUrl}
+                      onChange={(e) => setSupabaseUrl(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-neutral-medium" htmlFor="supabaseAnonKey">Project Anon Key</label>
+                    <input
+                      id="supabaseAnonKey"
+                      type="text"
+                      placeholder="ey..."
+                      value={supabaseAnonKey}
+                      onChange={(e) => setSupabaseAnonKey(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
+                      required
+                    />
+                  </div>
+                  <div className="flex justify-between items-center pt-4">
+                     <button type="button" onClick={() => setStep(1)} className="px-4 py-2 text-sm font-medium text-neutral-dark bg-gray-200 rounded-md hover:bg-gray-300 transition-colors">
+                        Back
+                     </button>
+                    <button
+                        type="submit"
+                        className="bg-brand-primary text-white font-bold py-2 px-6 rounded-lg hover:bg-brand-dark transition-colors"
+                    >
+                        Save and Continue
+                    </button>
+                  </div>
+                </form>
             </div>
-            <p className="text-sm text-neutral-medium mb-2 flex-shrink-0">
-                Copy this schema and run it in your Supabase Dashboard's <code className="bg-gray-200 p-1 rounded">SQL Editor</code>.
-            </p>
-            <div className="bg-neutral-dark text-white rounded-lg p-4 overflow-auto flex-grow">
-              <pre className="text-xs whitespace-pre-wrap">
-                <code>{sqlSchema}</code>
-              </pre>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
