@@ -106,8 +106,8 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
             case 'timeline':
                 return <GanttChart 
                             tasks={project.tasks}
-                            projectStartDate={project.start_date!}
-                            projectEndDate={project.end_date!}
+                            projectStartDate={project.start_date || ''}
+                            projectEndDate={project.end_date || ''}
                         />;
             case 'milestones':
                 return <MilestonesView 
@@ -147,8 +147,8 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
                         <h2 className="text-3xl font-bold text-neutral-dark">{project.name}</h2>
                         <p className="text-neutral-medium mt-2">{project.description}</p>
                         <div className="mt-4 flex items-center space-x-4 text-sm text-neutral-dark">
-                            <span><strong>Start:</strong> {new Date(project.start_date!).toLocaleDateString()}</span>
-                            <span><strong>End:</strong> {new Date(project.end_date!).toLocaleDateString()}</span>
+                            <span><strong>Start:</strong> {project.start_date ? new Date(project.start_date).toLocaleDateString() : 'N/A'}</span>
+                            <span><strong>End:</strong> {project.end_date ? new Date(project.end_date).toLocaleDateString() : 'N/A'}</span>
                             <span className={`px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800`}>{project.status}</span>
                         </div>
                     </div>

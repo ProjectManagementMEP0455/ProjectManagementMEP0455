@@ -70,26 +70,30 @@ const App: React.FC = () => {
       if (profileError) throw profileError;
       setUserProfile(profileData);
 
-      // Fetch projects with related data
+      // Fetch projects with related data using a more robust query
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select(`
           *,
           tasks(*),
           milestones(*),
-          project_team_members:project_team_members(
-            profile:profiles(*)
-          )
+          project_team_members(*, profiles(*))
         `)
         .order('created_at', { ascending: false });
         
       if (projectsError) throw projectsError;
 
-      const formattedProjects = (projectsData || []).map((p: any) => ({
-        ...p,
-        status: p.status as ProjectStatus,
-        teamMembers: (p.project_team_members || []).map((ptm: any) => ptm.profile).filter(Boolean)
-      }));
+      const formattedProjects = (projectsData || []).map((p: any) => {
+        const teamMembers = (p.project_team_members || [])
+          .map((ptm: any) => ptm.profiles) // Use .profiles (plural, from table name)
+          .filter(Boolean); // Filter out any null profiles from failed joins
+
+        return {
+          ...p,
+          status: p.status as ProjectStatus,
+          teamMembers: teamMembers
+        };
+      });
       setProjects(formattedProjects);
 
     } catch (error: any) {
