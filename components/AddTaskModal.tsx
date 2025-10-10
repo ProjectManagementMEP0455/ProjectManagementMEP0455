@@ -1,142 +1,137 @@
-import React, { useState } from 'react';
+import React, { useState, FormEvent, useEffect } from 'react';
 import { Task, TaskStatus, TaskPriority } from '../types';
 import { MOCK_USERS } from '../constants';
-import Card from './ui/Card';
 
 interface AddTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddTask: (newTask: Task) => void;
+  onAddTask: (task: Task) => void;
 }
 
 const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
-  const [status, setStatus] = useState<TaskStatus>(TaskStatus.ToDo);
-  const [priority, setPriority] = useState<TaskPriority>(TaskPriority.Medium);
-  const [startDate, setStartDate] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [priority, setPriority] = useState<TaskPriority>(TaskPriority.Medium);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!isOpen) {
+      // Reset form when modal is closed
+      setTitle('');
+      setDescription('');
+      setAssigneeIds([]);
+      setDueDate('');
+      setPriority(TaskPriority.Medium);
+    }
+  }, [isOpen]);
+
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !startDate || !dueDate) {
-      alert('Task title, start date, and due date are required.');
+    if (!title || !dueDate || assigneeIds.length === 0) {
+      alert('Please fill out all required fields.');
       return;
     }
 
     const newTask: Task = {
-      id: `t-${Date.now()}`, // Simple unique ID generation
+      id: `t${Date.now()}`,
       title,
       description,
-      status,
+      status: TaskStatus.ToDo,
       priority,
-      startDate,
+      startDate: new Date().toISOString().split('T')[0], // Today's date
       dueDate,
       assigneeIds,
     };
-
     onAddTask(newTask);
-    onClose(); // Close modal after adding
-    // Reset form
-    setTitle('');
-    setDescription('');
-    setAssigneeIds([]);
-    setStatus(TaskStatus.ToDo);
-    setPriority(TaskPriority.Medium);
-    setStartDate('');
-    setDueDate('');
+    onClose();
+  };
+  
+  const handleAssigneeChange = (userId: string) => {
+    setAssigneeIds(prev => 
+      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+    );
   };
 
   if (!isOpen) {
     return null;
   }
 
-  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
-      if (e.target === e.currentTarget) {
-          onClose();
-      }
-  }
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center" onClick={handleOverlayClick}>
-      <Card className="w-full max-w-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-neutral-dark">Add New Task</h2>
-          <button onClick={onClose} className="text-2xl text-neutral-medium hover:text-neutral-dark">&times;</button>
-        </div>
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-neutral-dark mb-1">Title</label>
-              <input
-                type="text"
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-neutral-dark mb-1">Description</label>
-              <textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-                className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
-              />
-            </div>
-            <div>
-               <label htmlFor="assignees" className="block text-sm font-medium text-neutral-dark mb-1">Assignees</label>
-               <select
-                 multiple
-                 id="assignees"
-                 value={assigneeIds}
-                 onChange={(e) => setAssigneeIds(Array.from(e.target.selectedOptions, option => option.value))}
-                 className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary h-24"
-               >
-                 {MOCK_USERS.map(user => (
-                   <option key={user.id} value={user.id}>{user.name}</option>
-                 ))}
-               </select>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               <div>
-                 <label htmlFor="status" className="block text-sm font-medium text-neutral-dark mb-1">Status</label>
-                 <select id="status" value={status} onChange={(e) => setStatus(e.target.value as TaskStatus)} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary">
-                    {Object.values(TaskStatus).map(s => <option key={s} value={s}>{s}</option>)}
-                 </select>
-               </div>
-               <div>
-                 <label htmlFor="priority" className="block text-sm font-medium text-neutral-dark mb-1">Priority</label>
-                 <select id="priority" value={priority} onChange={(e) => setPriority(e.target.value as TaskPriority)} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary">
-                    {Object.values(TaskPriority).map(p => <option key={p} value={p}>{p}</option>)}
-                 </select>
-               </div>
-            </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               <div>
-                 <label htmlFor="startDate" className="block text-sm font-medium text-neutral-dark mb-1">Start Date</label>
-                 <input type="date" id="startDate" value={startDate} onChange={(e) => setStartDate(e.target.value)} required className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary" />
-               </div>
-               <div>
-                 <label htmlFor="dueDate" className="block text-sm font-medium text-neutral-dark mb-1">Due Date</label>
-                 <input type="date" id="dueDate" value={dueDate} onChange={(e) => setDueDate(e.target.value)} required className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary" />
-               </div>
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
+      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-lg">
+        <h2 className="text-2xl font-bold text-neutral-dark mb-6">Add New Task</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium text-neutral-medium">Title</label>
+            <input
+              type="text"
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-neutral-medium">Description</label>
+            <textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
+            />
+          </div>
+          <div>
+            <label htmlFor="dueDate" className="block text-sm font-medium text-neutral-medium">Due Date</label>
+            <input
+              type="date"
+              id="dueDate"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="priority" className="block text-sm font-medium text-neutral-medium">Priority</label>
+            <select
+              id="priority"
+              value={priority}
+              onChange={(e) => setPriority(e.target.value as TaskPriority)}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
+            >
+              {Object.values(TaskPriority).map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-medium">Assignees</label>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {MOCK_USERS.map(user => (
+                <div key={user.id} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id={`user-${user.id}`}
+                    checked={assigneeIds.includes(user.id)}
+                    onChange={() => handleAssigneeChange(user.id)}
+                    className="h-4 w-4 text-brand-primary border-gray-300 rounded focus:ring-brand-primary"
+                  />
+                  <label htmlFor={`user-${user.id}`} className="ml-3 text-sm text-neutral-dark">{user.name}</label>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="mt-8 flex justify-end space-x-3">
-            <button type="button" onClick={onClose} className="bg-gray-200 text-neutral-dark font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">
+          <div className="flex justify-end space-x-4 pt-4">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-neutral-dark bg-gray-200 rounded-md hover:bg-gray-300 transition-colors">
               Cancel
             </button>
-            <button type="submit" className="bg-brand-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-brand-dark transition-colors">
-              Create Task
+            <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-dark transition-colors">
+              Add Task
             </button>
           </div>
         </form>
-      </Card>
+      </div>
     </div>
   );
 };
