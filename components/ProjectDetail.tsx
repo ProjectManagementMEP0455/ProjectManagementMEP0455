@@ -136,6 +136,9 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
     const budget = project.budget || 0;
     const spent = project.spent || 0;
     const budgetProgress = budget > 0 ? (spent / budget) * 100 : 0;
+    
+    const totalTaskProgress = project.tasks.reduce((sum, task) => sum + (task.percent_complete || 0), 0);
+    const overallProgress = project.tasks.length > 0 ? totalTaskProgress / project.tasks.length : 0;
 
     const tabs: {id: Tab, label: string}[] = [
         { id: 'tasks', label: 'Tasks' },
@@ -152,29 +155,38 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
             <Card>
                 <div className="flex flex-col md:flex-row justify-between md:items-start">
                     <div>
-                        <h2 className="text-3xl font-bold text-neutral-dark">{project.name}</h2>
-                        <p className="text-neutral-medium mt-2">{project.description}</p>
+                        <h2 className="text-3xl font-bold text-neutral-darkest">{project.name}</h2>
+                        <p className="text-neutral-medium mt-2 max-w-2xl">{project.description}</p>
                         <div className="mt-4 flex items-center space-x-4 text-sm text-neutral-dark">
                             <span><strong>Start:</strong> {project.start_date ? new Date(project.start_date).toLocaleDateString() : 'N/A'}</span>
                             <span><strong>End:</strong> {project.end_date ? new Date(project.end_date).toLocaleDateString() : 'N/A'}</span>
-                            <span className={`px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800`}>{project.status}</span>
+                            <span className={`px-2 py-1 text-xs font-semibold rounded-full bg-status-blue-light text-status-blue`}>{project.status}</span>
                         </div>
                     </div>
                     <div className="mt-4 md:mt-0 md:text-right">
-                         <p className="font-semibold text-neutral-dark">Team Members</p>
+                         <p className="font-semibold text-neutral-darkest">Team Members</p>
                          <div className="flex -space-x-2 mt-2 justify-end">
                             {teamMembers.map((profile) => <Avatar key={profile.id} profile={profile} size="md" />)}
                          </div>
                     </div>
                 </div>
-                 <div className="mt-6">
-                    <div className="flex justify-between text-sm text-neutral-medium mb-1">
-                        <span>Budget Utilization</span>
-                        <span>{`₹${spent.toLocaleString()} / ₹${budget.toLocaleString()}`}</span>
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t">
+                    <div>
+                        <div className="flex justify-between text-sm font-medium text-neutral-dark mb-1">
+                            <span>Overall Progress</span>
+                            <span>{overallProgress.toFixed(0)}%</span>
+                        </div>
+                        <div className="w-full bg-neutral-lightest rounded-full h-4">
+                            <div className="bg-status-green h-4 rounded-full" style={{ width: `${overallProgress}%` }}></div>
+                        </div>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-4">
-                        <div className="bg-brand-primary h-4 rounded-full text-white text-xs flex items-center justify-center" style={{ width: `${budgetProgress}%` }}>
-                           {budgetProgress.toFixed(0)}%
+                    <div>
+                        <div className="flex justify-between text-sm font-medium text-neutral-dark mb-1">
+                            <span>Budget Utilization</span>
+                            <span>{`₹${spent.toLocaleString()} / ₹${budget.toLocaleString()}`}</span>
+                        </div>
+                        <div className="w-full bg-neutral-lightest rounded-full h-4">
+                            <div className="bg-brand-primary h-4 rounded-full" style={{ width: `${budgetProgress}%` }}></div>
                         </div>
                     </div>
                 </div>
@@ -189,8 +201,8 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
                             className={`${
                                 activeTab === tab.id
                                 ? 'border-brand-primary text-brand-primary'
-                                : 'border-transparent text-neutral-medium hover:text-neutral-dark hover:border-gray-300'
-                            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                                : 'border-transparent text-neutral-medium hover:text-neutral-darkest hover:border-gray-300'
+                            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
                         >
                             {tab.label}
                         </button>

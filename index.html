@@ -5,27 +5,45 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MEP Project Management Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
             colors: {
               'brand-primary': '#0052CC',
               'brand-secondary': '#4C9AFF',
               'brand-dark': '#0747A6',
-              'neutral-dark': '#172B4D',
+              'brand-light': '#DEEBFF',
+              'neutral-darkest': '#172B4D',
+              'neutral-dark': '#42526E',
               'neutral-medium': '#5E6C84',
-              'neutral-light': '#F4F5F7',
+              'neutral-light': '#B3BAC5',
+              'neutral-lightest': '#F4F5F7',
               'status-green': '#36B37E',
+              'status-green-light': '#E3FCEF',
               'status-yellow': '#FFAB00',
+              'status-yellow-light': '#FFF0B3',
               'status-red': '#FF5630',
+              'status-red-light': '#FFEBE6',
               'status-blue': '#0065FF',
+              'status-blue-light': '#E7F0FF',
             },
           },
         },
       }
     </script>
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+    </style>
   <script type="importmap">
 {
   "imports": {

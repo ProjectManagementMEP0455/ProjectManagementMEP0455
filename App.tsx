@@ -188,7 +188,7 @@ const App: React.FC = () => {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return <div className="flex items-center justify-center min-h-screen bg-neutral-lightest">Loading...</div>;
   }
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
@@ -210,11 +210,11 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-neutral-lightest">
       <Sidebar currentPage={currentPage} navigateTo={navigateTo} userProfile={userProfile} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header user={userProfile} />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-8">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-neutral-lightest p-8">
             {renderContent()}
         </main>
       </div>

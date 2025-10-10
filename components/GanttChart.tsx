@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Task } from '../types';
 import Card from './ui/Card';
@@ -6,14 +5,14 @@ import Card from './ui/Card';
 interface GanttChartProps {
   tasks: Task[];
   projectStartDate: string;
-  projectEndDate: string;
+  projectEndDate:string;
 }
 
 const GanttChart: React.FC<GanttChartProps> = ({ tasks, projectStartDate, projectEndDate }) => {
   if (!projectStartDate || !projectEndDate) {
     return (
         <Card>
-            <h3 className="text-xl font-semibold text-neutral-dark">Project Timeline (Gantt Chart)</h3>
+            <h3 className="text-xl font-semibold text-neutral-darkest">Project Timeline (Gantt Chart)</h3>
             <p className="text-neutral-medium text-center py-4">Project start and end dates must be set to display the timeline.</p>
         </Card>
     );
@@ -22,6 +21,10 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks, projectStartDate, projec
   const startDate = new Date(projectStartDate);
   const endDate = new Date(projectEndDate);
   const totalDays = Math.max(1, (endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
+  
+  const today = new Date();
+  const todayOffsetDays = (today.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
+  const todayPosition = (todayOffsetDays / totalDays) * 100;
 
   const getTaskPosition = (task: Task) => {
     if (!task.start_date || !task.due_date) return { left: '0%', width: '0%' };
@@ -29,7 +32,6 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks, projectStartDate, projec
     const taskStart = new Date(task.start_date);
     const taskEnd = new Date(task.due_date); 
     
-    // Ensure task start is not before project start for calculation
     const effectiveTaskStart = taskStart < startDate ? startDate : taskStart;
     
     const durationDays = Math.max(1, (taskEnd.getTime() - effectiveTaskStart.getTime()) / (1000 * 3600 * 24));
@@ -66,27 +68,42 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks, projectStartDate, projec
 
   return (
     <Card>
-      <h3 className="text-xl font-semibold text-neutral-dark mb-6">Project Timeline (Gantt Chart)</h3>
-      <div className="space-y-4 relative pt-6 overflow-x-auto">
-        <div className="relative h-6 min-w-full" style={{width: '100%'}}>
+      <h3 className="text-xl font-semibold text-neutral-darkest mb-6">Project Timeline (Gantt Chart)</h3>
+      <div className="space-y-3 relative pt-6 overflow-x-auto">
+        {/* Timeline Header */}
+        <div className="relative h-6" style={{width: '100%'}}>
           <div className="h-full border-b border-gray-300">
             {renderMonthMarkers()}
           </div>
         </div>
 
-        {tasks.map((task) => (
-          <div key={task.id} className="flex items-center h-10 min-w-full">
-            <div className="w-1/4 pr-4 truncate text-sm font-medium text-neutral-dark flex-shrink-0">{task.name}</div>
-            <div className="w-3/4 bg-gray-100 rounded-full h-6 relative flex-grow">
-              <div
-                className="absolute bg-brand-primary h-6 rounded-full flex items-center justify-start pl-2"
-                style={getTaskPosition(task)}
-                title={`${task.name} (${task.start_date} to ${task.due_date})`}
-              >
+        {/* Task Rows */}
+        <div className="relative">
+             {/* Today Marker */}
+            {todayPosition >= 0 && todayPosition <= 100 && (
+                 <div style={{ left: `${todayPosition}%` }} className="absolute top-0 bottom-0 w-0.5 bg-status-red z-10" title={`Today: ${today.toLocaleDateString()}`}>
+                    <div className="absolute -top-5 -translate-x-1/2 bg-status-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">TODAY</div>
+                 </div>
+            )}
+            
+            {tasks.map((task, index) => (
+              <div key={task.id} className="flex items-center h-12">
+                <div className="w-1/4 pr-4 truncate text-sm font-medium text-neutral-darkest flex-shrink-0">{task.name}</div>
+                <div className="w-3/4 h-8 bg-neutral-lightest rounded-md relative flex-grow">
+                  <div
+                    className="absolute bg-brand-light h-8 rounded-md flex items-center justify-start"
+                    style={getTaskPosition(task)}
+                    title={`${task.name} \nStart: ${task.start_date} \nDue: ${task.due_date} \nProgress: ${task.percent_complete || 0}%`}
+                  >
+                    <div 
+                        className="bg-brand-primary h-8 rounded-md" 
+                        style={{width: `${task.percent_complete || 0}%`}}>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        ))}
+            ))}
+        </div>
          {tasks.length === 0 && <p className="text-neutral-medium text-center py-4">No tasks to display in the timeline.</p>}
       </div>
     </Card>
