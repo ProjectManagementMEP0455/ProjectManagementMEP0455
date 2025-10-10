@@ -88,7 +88,7 @@ const App: React.FC = () => {
       const formattedProjects = (projectsData || []).map((p: any) => ({
         ...p,
         status: p.status as ProjectStatus,
-        teamMembers: p.project_team_members.map((ptm: any) => ptm.profile)
+        teamMembers: (p.project_team_members || []).map((ptm: any) => ptm.profile).filter(Boolean)
       }));
       setProjects(formattedProjects);
 
