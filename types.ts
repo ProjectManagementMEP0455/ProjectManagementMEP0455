@@ -84,8 +84,16 @@ export type Database = {
     Tables: {
       profiles: {
         Row: Profile;
-        Insert: Omit<Profile, 'id'>;
+        // FIX: Expanded Insert and Update types to include all possible fields,
+        // which resolves issues with Supabase client type inference.
+        Insert: {
+          id?: string;
+          full_name?: string | null;
+          avatar_url?: string | null;
+          role?: UserRole | null;
+        };
         Update: {
+          id?: string;
           full_name?: string | null;
           avatar_url?: string | null;
           role?: UserRole | null;
@@ -101,11 +109,13 @@ export type Database = {
           end_date: string | null;
           budget: number | null;
           spent: number | null;
-          // FIX: Changed type from string to ProjectStatus enum for better type safety.
           status: ProjectStatus;
           created_by: string;
         };
+        // FIX: Expanded Insert and Update types to include all possible fields from Row.
         Insert: {
+          id?: number;
+          created_at?: string;
           name: string;
           created_by: string;
           description?: string | null;
@@ -113,18 +123,19 @@ export type Database = {
           end_date?: string | null;
           budget?: number | null;
           spent?: number | null;
-          // FIX: Changed type from string to ProjectStatus enum for better type safety.
           status?: ProjectStatus;
         };
         Update: {
+          id?: number;
+          created_at?: string;
           name?: string;
           description?: string | null;
           start_date?: string | null;
           end_date?: string | null;
           budget?: number | null;
           spent?: number | null;
-          // FIX: Changed type from string to ProjectStatus enum for better type safety.
           status?: ProjectStatus;
+          created_by?: string;
         };
       };
       tasks: {
@@ -133,30 +144,33 @@ export type Database = {
           created_at: string;
           name: string;
           description: string | null;
-          // FIX: Changed type from string to TaskStatus enum for better type safety.
           status: TaskStatus;
           due_date: string | null;
           assignee_id: string | null;
           project_id: number;
           percent_complete: number | null;
         };
+        // FIX: Expanded Insert and Update types to include all possible fields from Row.
         Insert: {
+          id?: number;
+          created_at?: string;
           name: string;
           project_id: number;
           description?: string | null;
-          // FIX: Changed type from string to TaskStatus enum for better type safety.
           status?: TaskStatus;
           due_date?: string | null;
           assignee_id?: string | null;
           percent_complete?: number | null;
         };
         Update: {
+          id?: number;
+          created_at?: string;
           name?: string;
           description?: string | null;
-          // FIX: Changed type from string to TaskStatus enum for better type safety.
           status?: TaskStatus;
           due_date?: string | null;
           assignee_id?: string | null;
+          project_id?: number;
           percent_complete?: number | null;
         };
       };
@@ -169,15 +183,21 @@ export type Database = {
             project_id: number;
             completed: boolean;
         };
+        // FIX: Expanded Insert and Update types to include all possible fields from Row.
         Insert: {
+            id?: number;
+            created_at?: string;
             name: string;
             due_date: string;
             project_id: number;
             completed?: boolean;
         };
         Update: {
+            id?: number;
+            created_at?: string;
             name?: string;
             due_date?: string;
+            project_id?: number;
             completed?: boolean;
         };
       };

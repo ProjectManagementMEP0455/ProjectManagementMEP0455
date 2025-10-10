@@ -3,6 +3,7 @@ import React from 'react';
 import { Project, Page, ProjectStatus } from '../types';
 import Card from './ui/Card';
 import Avatar from './ui/Avatar';
+import RiskAnalysis from './RiskAnalysis';
 
 interface DashboardProps {
   navigateTo: (page: Page, projectId?: number) => void;
@@ -26,7 +27,11 @@ const Dashboard: React.FC<DashboardProps> = ({ navigateTo, projects }) => {
 
     return (
         <div className="space-y-8">
-            <h2 className="text-3xl font-bold text-neutral-dark">Dashboard</h2>
+            <div className="flex justify-between items-center">
+                 <h2 className="text-3xl font-bold text-neutral-dark">Dashboard</h2>
+            </div>
+
+            <RiskAnalysis projects={projects} />
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard title="Total Projects" value={totalProjects} />
