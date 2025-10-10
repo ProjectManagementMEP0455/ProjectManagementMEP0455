@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Task, TaskStatus, TaskPriority } from '../types';
 import { MOCK_USERS } from '../constants';
@@ -7,6 +6,7 @@ import { ICONS } from '../constants';
 
 interface KanbanBoardProps {
   tasks: Task[];
+  onOpenAddTaskModal: () => void;
 }
 
 const priorityStyles: { [key in TaskPriority]: { bg: string; text: string; } } = {
@@ -36,7 +36,7 @@ const TaskCard: React.FC<{ task: Task }> = ({ task }) => {
   );
 };
 
-const KanbanColumn: React.FC<{ title: string; tasks: Task[]; }> = ({ title, tasks }) => {
+const KanbanColumn: React.FC<{ title: string; tasks: Task[]; onOpenAddTaskModal?: () => void; }> = ({ title, tasks, onOpenAddTaskModal }) => {
   return (
     <div className="bg-gray-100 rounded-lg p-3 flex-1">
       <div className="flex justify-between items-center mb-4">
@@ -46,16 +46,21 @@ const KanbanColumn: React.FC<{ title: string; tasks: Task[]; }> = ({ title, task
       <div>
         {tasks.map(task => <TaskCard key={task.id} task={task} />)}
       </div>
-      <button className="w-full mt-2 flex items-center justify-center text-neutral-medium hover:bg-gray-200 p-2 rounded-md transition-colors">
-        {ICONS.plus}
-        <span className="ml-2">Add Task</span>
-      </button>
+      {onOpenAddTaskModal && (
+        <button
+          onClick={onOpenAddTaskModal}
+          className="w-full mt-2 flex items-center justify-center text-neutral-medium hover:bg-gray-200 p-2 rounded-md transition-colors"
+        >
+          {ICONS.plus}
+          <span className="ml-2">Add Task</span>
+        </button>
+      )}
     </div>
   );
 };
 
 
-const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks }) => {
+const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onOpenAddTaskModal }) => {
   const columns: { title: TaskStatus; tasks: Task[] }[] = [
     { title: TaskStatus.ToDo, tasks: tasks.filter(t => t.status === TaskStatus.ToDo) },
     { title: TaskStatus.InProgress, tasks: tasks.filter(t => t.status === TaskStatus.InProgress) },
@@ -66,7 +71,12 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks }) => {
   return (
     <div className="flex space-x-4">
       {columns.map(col => (
-        <KanbanColumn key={col.title} title={col.title} tasks={col.tasks} />
+        <KanbanColumn
+          key={col.title}
+          title={col.title}
+          tasks={col.tasks}
+          onOpenAddTaskModal={col.title === TaskStatus.ToDo ? onOpenAddTaskModal : undefined}
+        />
       ))}
     </div>
   );

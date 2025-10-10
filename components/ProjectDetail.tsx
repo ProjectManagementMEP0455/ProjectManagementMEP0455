@@ -1,12 +1,12 @@
-
 import React, { useState } from 'react';
-import { Project } from '../types';
+import { Project, Task } from '../types';
 import KanbanBoard from './KanbanBoard';
 import GanttChart from './GanttChart';
 import Card from './ui/Card';
 import { MOCK_USERS } from '../constants';
 import Avatar from './ui/Avatar';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import AddTaskModal from './AddTaskModal';
 
 interface ProjectDetailProps {
   project: Project;
@@ -15,7 +15,9 @@ interface ProjectDetailProps {
 type Tab = 'overview' | 'tasks' | 'schedule' | 'budget' | 'team';
 
 const ProjectDetail: React.FC<ProjectDetailProps> = ({ project }) => {
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [activeTab, setActiveTab] = useState<Tab>('tasks');
+  const [tasks, setTasks] = useState<Task[]>(project.tasks);
+  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   
   const teamMembers = MOCK_USERS.filter(u => project.teamMemberIds.includes(u.id));
 
@@ -23,6 +25,11 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project }) => {
     { name: 'Spent', value: project.spent, color: '#0052CC' },
     { name: 'Remaining', value: project.budget - project.spent, color: '#B3D4FF' },
   ];
+  
+  const handleAddTask = (newTask: Task) => {
+    setTasks(prevTasks => [...prevTasks, newTask]);
+    // In a real app, you would also make an API call here to save the task.
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -76,9 +83,10 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project }) => {
           </div>
         );
       case 'tasks':
-        return <KanbanBoard tasks={project.tasks} />;
+        return <KanbanBoard tasks={tasks} onOpenAddTaskModal={() => setIsAddTaskModalOpen(true)} />;
       case 'schedule':
-        return <GanttChart project={project} />;
+        const projectForGantt = { ...project, tasks };
+        return <GanttChart project={projectForGantt} />;
       case 'budget':
         return (
             <Card>
@@ -139,6 +147,12 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project }) => {
       </div>
 
       <div>{renderTabContent()}</div>
+      
+      <AddTaskModal
+        isOpen={isAddTaskModalOpen}
+        onClose={() => setIsAddTaskModalOpen(false)}
+        onAddTask={handleAddTask}
+      />
     </div>
   );
 };
