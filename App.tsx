@@ -116,7 +116,7 @@ const AppContent: React.FC = () => {
           *,
           tasks(*),
           milestones(*),
-          project_team_members(*, profile:profiles(*))
+          team_member_joins:project_team_members(*, profile:profiles(*))
         `)
         .order('created_at', { ascending: false });
         
@@ -125,7 +125,7 @@ const AppContent: React.FC = () => {
       const formattedProjects = (projectsData || []).map((p: any) => ({
         ...p,
         status: p.status as ProjectStatus,
-        teamMembers: (p.project_team_members || []).map((ptm: any) => ptm.profile).filter(Boolean)
+        teamMembers: (p.team_member_joins || []).map((ptm: any) => ptm.profile).filter(Boolean)
       }));
       setProjects(formattedProjects);
 
@@ -163,7 +163,7 @@ const AppContent: React.FC = () => {
         if (projectError) throw projectError;
 
         if (!newProject) {
-            alert("Error adding project: Could not create project record.");
+            console.error("Error adding project: Could not create project record.");
             return;
         }
 
@@ -189,7 +189,7 @@ const AppContent: React.FC = () => {
         navigateTo(Page.Projects);
 
     } catch (error: any) {
-        alert("Error adding project: " + error.message);
+        console.error("Error adding project: " + error.message);
     }
   };
   

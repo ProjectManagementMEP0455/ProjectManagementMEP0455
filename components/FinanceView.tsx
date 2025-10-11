@@ -178,20 +178,20 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
         });
 
         if (error) {
-            alert("Error creating expense: " + error.message);
+            console.error("Error creating expense: " + error.message);
         } else {
             const { data: updatedProjects, error: refreshError } = await supabase
                 .from('projects')
-                .select('*, tasks(*), milestones(*), project_team_members(*, profile:profiles(*))')
+                .select('*, tasks(*), milestones(*), team_member_joins:project_team_members(*, profile:profiles(*))')
                 .eq('id', project.id);
             
             if (refreshError) {
-                 alert('Error refreshing project data: ' + refreshError.message);
+                 console.error('Error refreshing project data: ' + refreshError.message);
             } else if (updatedProjects && updatedProjects.length > 0) {
                 const updatedProjectData = updatedProjects[0];
                 const formattedProject = {
                     ...updatedProjectData,
-                    teamMembers: (updatedProjectData.project_team_members || []).map((ptm: any) => ptm.profile).filter(Boolean),
+                    teamMembers: (updatedProjectData.team_member_joins || []).map((ptm: any) => ptm.profile).filter(Boolean),
                     tasks: updatedProjectData.tasks as Task[],
                     milestones: updatedProjectData.milestones as Milestone[]
                 };
