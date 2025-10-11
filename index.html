@@ -1,46 +1,143 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MEP Project Management Pro</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
+        darkMode: 'class',
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Inter', 'sans-serif'],
+              sans: ['Poppins', 'sans-serif'],
             },
             colors: {
-              'brand-primary': '#0052CC',
-              'brand-secondary': '#4C9AFF',
-              'brand-dark': '#0747A6',
-              'brand-light': '#DEEBFF',
-              'neutral-darkest': '#172B4D',
-              'neutral-dark': '#42526E',
-              'neutral-medium': '#5E6C84',
-              'neutral-light': '#B3BAC5',
-              'neutral-lightest': '#F4F5F7',
-              'status-green': '#36B37E',
-              'status-green-light': '#E3FCEF',
-              'status-yellow': '#FFAB00',
-              'status-yellow-light': '#FFF0B3',
-              'status-red': '#FF5630',
-              'status-red-light': '#FFEBE6',
-              'status-blue': '#0065FF',
-              'status-blue-light': '#E7F0FF',
+              border: 'hsl(var(--border))',
+              input: 'hsl(var(--input))',
+              ring: 'hsl(var(--ring))',
+              background: 'hsl(var(--background))',
+              foreground: 'hsl(var(--foreground))',
+              primary: {
+                DEFAULT: 'hsl(var(--primary))',
+                foreground: 'hsl(var(--primary-foreground))',
+              },
+              secondary: {
+                DEFAULT: 'hsl(var(--secondary))',
+                foreground: 'hsl(var(--secondary-foreground))',
+              },
+              destructive: {
+                DEFAULT: 'hsl(var(--destructive))',
+                foreground: 'hsl(var(--destructive-foreground))',
+              },
+              muted: {
+                DEFAULT: 'hsl(var(--muted))',
+                foreground: 'hsl(var(--muted-foreground))',
+              },
+              accent: {
+                DEFAULT: 'hsl(var(--accent))',
+                foreground: 'hsl(var(--accent-foreground))',
+              },
+              popover: {
+                DEFAULT: 'hsl(var(--popover))',
+                foreground: 'hsl(var(--popover-foreground))',
+              },
+              card: {
+                DEFAULT: 'hsl(var(--card))',
+                foreground: 'hsl(var(--card-foreground))',
+              },
+            },
+             borderRadius: {
+              lg: `var(--radius)`,
+              md: `calc(var(--radius) - 2px)`,
+              sm: 'calc(var(--radius) - 4px)',
+            },
+            keyframes: {
+              "accordion-down": {
+                from: { height: 0 },
+                to: { height: "var(--radix-accordion-content-height)" },
+              },
+              "accordion-up": {
+                from: { height: "var(--radix-accordion-content-height)" },
+                to: { height: 0 },
+              },
+            },
+            animation: {
+              "accordion-down": "accordion-down 0.2s ease-out",
+              "accordion-up": "accordion-up 0.2s ease-out",
             },
           },
         },
       }
     </script>
     <style>
+      :root {
+        --radius: 0.5rem;
+      }
+      .dark {
+        --background: 222.2 84% 4.9%;
+        --foreground: 210 40% 98%;
+        --card: 222.2 84% 4.9%;
+        --card-foreground: 210 40% 98%;
+        --popover: 222.2 84% 4.9%;
+        --popover-foreground: 210 40% 98%;
+        --primary: 251 89% 70%;
+        --primary-foreground: 210 40% 98%;
+        --secondary: 217.2 32.6% 17.5%;
+        --secondary-foreground: 210 40% 98%;
+        --muted: 217.2 32.6% 17.5%;
+        --muted-foreground: 215 20.2% 65.1%;
+        --accent: 217.2 32.6% 17.5%;
+        --accent-foreground: 210 40% 98%;
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 210 40% 98%;
+        --border: 217.2 32.6% 17.5%;
+        --input: 217.2 32.6% 17.5%;
+        --ring: 251 89% 70%;
+      }
+      .light {
+        --background: 0 0% 100%;
+        --foreground: 222.2 84% 4.9%;
+        --card: 0 0% 100%;
+        --card-foreground: 222.2 84% 4.9%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 222.2 84% 4.9%;
+        --primary: 251 80% 60%;
+        --primary-foreground: 210 40% 98%;
+        --secondary: 210 40% 96.1%;
+        --secondary-foreground: 222.2 47.4% 11.2%;
+        --muted: 210 40% 96.1%;
+        --muted-foreground: 215.4 16.3% 46.9%;
+        --accent: 210 40% 96.1%;
+        --accent-foreground: 222.2 47.4% 11.2%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 210 40% 98%;
+        --border: 214.3 31.8% 91.4%;
+        --input: 214.3 31.8% 91.4%;
+        --ring: 222.2 84% 4.9%;
+      }
       body {
-        font-family: 'Inter', sans-serif;
+        font-family: 'Poppins', sans-serif;
+        background-color: hsl(var(--background));
+        color: hsl(var(--foreground));
+      }
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: hsl(var(--secondary));
+      }
+      ::-webkit-scrollbar-thumb {
+        background: hsl(var(--muted-foreground));
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: hsl(var(--primary));
       }
     </style>
   <script type="importmap">

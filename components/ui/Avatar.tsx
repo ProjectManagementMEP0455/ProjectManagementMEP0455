@@ -14,7 +14,7 @@ const Avatar: React.FC<AvatarProps> = ({ profile, size = 'md' }) => {
   };
 
   const placeholder = (
-    <div className={`rounded-full flex items-center justify-center bg-brand-secondary text-white font-bold ${sizeClasses[size]}`}>
+    <div className={`rounded-full flex items-center justify-center bg-primary text-primary-foreground font-bold ${sizeClasses[size]}`}>
       {profile.full_name ? profile.full_name.charAt(0).toUpperCase() : '?'}
     </div>
   );

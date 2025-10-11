@@ -5,82 +5,57 @@ interface SidebarProps {
   currentPage: Page;
   navigateTo: (page: Page) => void;
   userProfile: Profile | null;
+  isCollapsed: boolean;
 }
 
-const ICONS = {
-    dashboard: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" /></svg>,
-    projects: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2z" /></svg>,
-    newProject: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-    sqlEditor: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>,
-    admin: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.096 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+const ICONS: { [key: string]: React.ReactNode } = {
+    dashboard: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>,
+    projects: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg>,
+    newProject: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+    admin: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" /></svg>,
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentPage, navigateTo, userProfile }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentPage, navigateTo, userProfile, isCollapsed }) => {
   const navItems = [
     { page: Page.Dashboard, label: 'Dashboard', icon: ICONS.dashboard, allowedRoles: null },
     { page: Page.Projects, label: 'Projects', icon: ICONS.projects, allowedRoles: null },
-    { page: Page.NewProject, label: 'New Project', icon: ICONS.newProject, allowedRoles: [UserRole.ProjectDirector, UserRole.Admin] },
+    { page: Page.NewProject, label: 'New Project', icon: ICONS.newProject, allowedRoles: [UserRole.ProjectDirector, UserRole.Admin, UserRole.ProjectManager] },
     { page: Page.AdminPanel, label: 'Admin Panel', icon: ICONS.admin, allowedRoles: [UserRole.Admin] },
   ];
 
   const visibleNavItems = navItems.filter(item => {
-    if (!item.allowedRoles) return true; // Show if no specific roles are required
-    if (!userProfile?.role) return false; // Hide if user has no role
+    if (!item.allowedRoles) return true;
+    if (!userProfile?.role) return false;
     return item.allowedRoles.includes(userProfile.role);
   });
-  
-  const getSqlEditorUrl = () => {
-    const supabaseUrl = localStorage.getItem('supabaseUrl');
-    if (!supabaseUrl) return null;
-    try {
-      const url = new URL(supabaseUrl);
-      const projectRef = url.hostname.split('.')[0];
-      if (!projectRef) return null;
-      return `https://app.supabase.com/project/${projectRef}/sql/new`;
-    } catch (e) {
-      console.error("Could not parse Supabase URL:", e);
-      return null;
-    }
-  };
-
-  const sqlEditorUrl = getSqlEditorUrl();
 
   return (
-    <aside className="w-64 bg-neutral-darkest text-white flex flex-col flex-shrink-0">
-      <div className="h-20 flex items-center justify-center text-2xl font-bold">
-        <span className="text-brand-secondary">MEP</span>
-        <span className="text-white">-Dash</span>
+    <aside className={`bg-background border-r border-border flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-64'}`}>
+      <div className="h-20 flex items-center justify-center border-b border-border">
+        <span className={`text-2xl font-bold transition-all duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>
+          <span className="text-primary">MEP</span>
+          <span className="text-foreground">-Dash</span>
+        </span>
       </div>
       <nav className="flex-1 px-4 py-6 space-y-2">
         {visibleNavItems.map(item => (
           <button
             key={item.page}
             onClick={() => navigateTo(item.page)}
-            className={`w-full flex items-center px-4 py-3 rounded-lg transition-all duration-200 ${
+            title={item.label}
+            className={`w-full flex items-center px-4 py-3 rounded-lg transition-all duration-200 group ${
               currentPage === item.page
-                ? 'bg-brand-primary text-white shadow-lg'
-                : 'text-neutral-light hover:bg-neutral-dark hover:text-white'
-            }`}
+                ? 'bg-primary text-primary-foreground shadow-lg'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            } ${isCollapsed ? 'justify-center' : ''}`}
           >
-            <span className="mr-4">{item.icon}</span>
-            <span className="font-semibold">{item.label}</span>
+            <span className="flex-shrink-0">{item.icon}</span>
+            <span className={`font-semibold ml-4 transition-all duration-200 ${isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>{item.label}</span>
           </button>
         ))}
-        {(userProfile?.role === UserRole.ProjectDirector || userProfile?.role === UserRole.Admin) && sqlEditorUrl && (
-            <a
-                href={sqlEditorUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full flex items-center px-4 py-3 rounded-lg transition-colors text-neutral-light hover:bg-neutral-dark hover:text-white"
-                aria-label="Open Supabase SQL Editor in a new tab"
-            >
-                <span className="mr-4">{ICONS.sqlEditor}</span>
-                <span className="font-semibold">SQL Editor</span>
-            </a>
-        )}
       </nav>
-      <div className="p-4 border-t border-neutral-dark">
-        <p className="text-xs text-neutral-medium">&copy; 2024 MEP-Dash Inc.</p>
+      <div className={`p-4 border-t border-border transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>
+        <p className="text-xs text-muted-foreground whitespace-nowrap">&copy; 2024 MEP-Dash Inc.</p>
       </div>
     </aside>
   );

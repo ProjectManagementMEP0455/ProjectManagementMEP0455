@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Project, Task, Profile, Milestone, MilestoneInsert, UserRole } from '../types';
 import Card from './ui/Card';
@@ -181,47 +180,47 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
 
     return (
         <div className="space-y-6">
-            <Card>
+            <Card className="p-6">
                 <div className="flex flex-col md:flex-row justify-between md:items-start">
                     <div>
-                        <h2 className="text-3xl font-bold text-neutral-darkest">{project.name}</h2>
-                        <p className="text-neutral-medium mt-2 max-w-2xl">{project.description}</p>
-                        <div className="mt-4 flex items-center space-x-4 text-sm text-neutral-dark">
+                        <h2 className="text-3xl font-bold text-foreground">{project.name}</h2>
+                        <p className="text-muted-foreground mt-2 max-w-2xl">{project.description}</p>
+                        <div className="mt-4 flex items-center space-x-4 text-sm text-muted-foreground">
                             <span><strong>Start:</strong> {project.start_date ? new Date(project.start_date).toLocaleDateString() : 'N/A'}</span>
                             <span><strong>End:</strong> {project.end_date ? new Date(project.end_date).toLocaleDateString() : 'N/A'}</span>
-                            <span className={`px-2 py-1 text-xs font-semibold rounded-full bg-status-blue-light text-status-blue`}>{project.status}</span>
+                            <span className={`px-2 py-1 text-xs font-semibold rounded-full bg-blue-500/20 text-blue-300`}>{project.status}</span>
                         </div>
                     </div>
                     <div className="mt-4 md:mt-0 md:text-right">
-                         <p className="font-semibold text-neutral-darkest">Team Members</p>
+                         <p className="font-semibold text-foreground">Team Members</p>
                          <div className="flex -space-x-2 mt-2 justify-end">
                             {teamMembers.map((profile) => <Avatar key={profile.id} profile={profile} size="md" />)}
                          </div>
                     </div>
                 </div>
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t">
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-border">
                     <div>
-                        <div className="flex justify-between text-sm font-medium text-neutral-dark mb-1">
+                        <div className="flex justify-between text-sm font-medium text-foreground mb-1">
                             <span>Overall Progress</span>
                             <span>{overallProgress.toFixed(0)}%</span>
                         </div>
-                        <div className="w-full bg-neutral-lightest rounded-full h-4">
-                            <div className="bg-status-green h-4 rounded-full" style={{ width: `${overallProgress}%` }}></div>
+                        <div className="w-full bg-secondary rounded-full h-4">
+                            <div className="bg-green-500 h-4 rounded-full" style={{ width: `${overallProgress}%` }}></div>
                         </div>
                     </div>
                     <div>
-                        <div className="flex justify-between text-sm font-medium text-neutral-dark mb-1">
+                        <div className="flex justify-between text-sm font-medium text-foreground mb-1">
                             <span>Budget Utilization</span>
                             <span>{`₹${spent.toLocaleString()} / ₹${budget.toLocaleString()}`}</span>
                         </div>
-                        <div className="w-full bg-neutral-lightest rounded-full h-4">
-                            <div className="bg-brand-primary h-4 rounded-full" style={{ width: `${budgetProgress}%` }}></div>
+                        <div className="w-full bg-secondary rounded-full h-4">
+                            <div className="bg-primary h-4 rounded-full" style={{ width: `${budgetProgress}%` }}></div>
                         </div>
                     </div>
                 </div>
             </Card>
 
-            <div className="border-b border-gray-200">
+            <div className="border-b border-border">
                 <nav className="-mb-px flex space-x-8 overflow-x-auto" aria-label="Tabs">
                     {tabs.map(tab => (
                          <button
@@ -229,9 +228,9 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
                             onClick={() => setActiveTab(tab.id)}
                             className={`${
                                 activeTab === tab.id
-                                ? 'border-brand-primary text-brand-primary'
-                                : 'border-transparent text-neutral-medium hover:text-neutral-darkest hover:border-gray-300'
-                            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+                                ? 'border-primary text-primary'
+                                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground'
+                            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors focus:outline-none`}
                         >
                             {tab.label}
                         </button>

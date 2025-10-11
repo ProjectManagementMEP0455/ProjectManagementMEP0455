@@ -3,8 +3,8 @@ import { Project, Page, ProjectStatus, Task, TaskStatus } from '../types';
 import Card from './ui/Card';
 import Avatar from './ui/Avatar';
 import RiskAnalysis from './RiskAnalysis';
-// FIX: Import CartesianGrid from recharts to resolve 'Cannot find name' error.
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
+import { useTheme } from '../App';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
 
 interface DashboardProps {
   navigateTo: (page: Page, projectId?: number) => void;
@@ -13,22 +13,23 @@ interface DashboardProps {
 
 const StatCard: React.FC<{ title: string; value: string | number; icon: React.ReactNode }> = ({ title, value, icon }) => (
     <Card className="flex items-center p-4">
-        <div className="p-3 rounded-full bg-brand-light text-brand-primary mr-4">
+        <div className="p-3 rounded-full bg-primary/20 text-primary mr-4">
             {icon}
         </div>
         <div>
-            <p className="text-sm text-neutral-medium font-medium">{title}</p>
-            <p className="text-2xl font-bold text-neutral-darkest">{value}</p>
+            <p className="text-sm text-muted-foreground font-medium">{title}</p>
+            <p className="text-2xl font-bold text-foreground">{value}</p>
         </div>
     </Card>
 );
 
-const statusColors: { [key in ProjectStatus]: string } = {
-  [ProjectStatus.Active]: '#0065FF',
-  [ProjectStatus.Planning]: '#FFAB00',
-  [ProjectStatus.Completed]: '#36B37E',
-  [ProjectStatus.OnHold]: '#FF5630',
+const statusThemeColors: { [key in ProjectStatus]: { light: string; dark: string } } = {
+  [ProjectStatus.Active]: { light: '#0065FF', dark: '#4C9AFF' },
+  [ProjectStatus.Planning]: { light: '#FFAB00', dark: '#FFC400' },
+  [ProjectStatus.Completed]: { light: '#36B37E', dark: '#57D9A3' },
+  [ProjectStatus.OnHold]: { light: '#FF5630', dark: '#FF7452' },
 };
+
 
 const LongPendingTasks: React.FC<{ projects: Project[], navigateTo: (page: Page, projectId?: number) => void }> = ({ projects, navigateTo }) => {
     const allTasks = projects.flatMap(p => p.tasks.map(t => ({...t, projectName: p.name, projectId: p.id})));
@@ -39,26 +40,26 @@ const LongPendingTasks: React.FC<{ projects: Project[], navigateTo: (page: Page,
         .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime());
 
     return (
-        <Card>
-            <h3 className="text-xl font-semibold text-neutral-darkest mb-4">Long Pending Tasks</h3>
-            <div className="space-y-3 max-h-80 overflow-y-auto">
+        <Card className="p-6">
+            <h3 className="text-xl font-semibold text-foreground mb-4">Long Pending Tasks</h3>
+            <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
                 {overdueTasks.length > 0 ? overdueTasks.slice(0, 7).map(task => {
                     const overdueDays = Math.floor((today.getTime() - new Date(task.due_date!).getTime()) / (1000 * 3600 * 24));
                     return (
-                        <div key={task.id} onClick={() => navigateTo(Page.ProjectDetail, task.projectId)} className="p-3 rounded-lg hover:bg-neutral-lightest cursor-pointer border border-transparent hover:border-gray-200">
+                        <div key={task.id} onClick={() => navigateTo(Page.ProjectDetail, task.projectId)} className="p-3 rounded-lg hover:bg-muted cursor-pointer">
                             <div className="flex justify-between items-center">
                                 <div>
-                                    <p className="font-semibold text-neutral-dark">{task.name}</p>
-                                    <p className="text-xs text-neutral-medium">{task.projectName}</p>
+                                    <p className="font-semibold text-foreground">{task.name}</p>
+                                    <p className="text-xs text-muted-foreground">{task.projectName}</p>
                                 </div>
                                 <div className="text-right flex-shrink-0 ml-2">
-                                     <p className="font-bold text-status-red">{overdueDays}d overdue</p>
-                                     <p className="text-xs text-neutral-medium">Due: {new Date(task.due_date!).toLocaleDateString()}</p>
+                                     <p className="font-bold text-destructive">{overdueDays}d overdue</p>
+                                     <p className="text-xs text-muted-foreground">Due: {new Date(task.due_date!).toLocaleDateString()}</p>
                                 </div>
                             </div>
                         </div>
                     );
-                }) : <p className="text-neutral-medium text-center py-8">No overdue tasks. Great job!</p>}
+                }) : <p className="text-muted-foreground text-center py-8">No overdue tasks. Great job!</p>}
             </div>
         </Card>
     );
@@ -66,6 +67,7 @@ const LongPendingTasks: React.FC<{ projects: Project[], navigateTo: (page: Page,
 
 
 const Dashboard: React.FC<DashboardProps> = ({ navigateTo, projects }) => {
+    const { theme } = useTheme();
     const totalProjects = projects.length;
     const activeProjects = projects.filter(p => p.status === ProjectStatus.Active).length;
     const completedProjects = projects.filter(p => p.status === ProjectStatus.Completed).length;
@@ -78,15 +80,17 @@ const Dashboard: React.FC<DashboardProps> = ({ navigateTo, projects }) => {
     })).filter(item => item.value > 0);
 
     const budgetData = projects.filter(p => (p.budget || 0) > 0).slice(0, 10).map(p => ({
-        name: p.name.length > 20 ? `${p.name.substring(0, 20)}...` : p.name,
+        name: p.name.length > 15 ? `${p.name.substring(0, 15)}...` : p.name,
         Budget: p.budget || 0,
         Spent: p.spent || 0,
     }));
+    
+    const tickColor = theme === 'dark' ? '#A1A1AA' : '#52525B';
 
     return (
         <div className="space-y-8">
             <div className="flex justify-between items-center">
-                 <h2 className="text-3xl font-bold text-neutral-darkest">Dashboard</h2>
+                 <h2 className="text-3xl font-bold text-foreground">Dashboard</h2>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -98,14 +102,14 @@ const Dashboard: React.FC<DashboardProps> = ({ navigateTo, projects }) => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <LongPendingTasks projects={projects} navigateTo={navigateTo} />
-                <Card>
-                    <h3 className="text-xl font-semibold text-neutral-darkest mb-4">Recent Projects</h3>
+                <Card className="p-6">
+                    <h3 className="text-xl font-semibold text-foreground mb-4">Recent Projects</h3>
                     <div className="space-y-2">
                         {recentProjects.map(project => (
-                            <div key={project.id} onClick={() => navigateTo(Page.ProjectDetail, project.id)} className="p-3 rounded-lg hover:bg-neutral-lightest cursor-pointer flex justify-between items-center">
+                            <div key={project.id} onClick={() => navigateTo(Page.ProjectDetail, project.id)} className="p-3 rounded-lg hover:bg-muted cursor-pointer flex justify-between items-center">
                                 <div>
-                                    <p className="font-semibold text-brand-primary">{project.name}</p>
-                                    <p className="text-sm text-neutral-medium">End Date: {project.end_date ? new Date(project.end_date).toLocaleDateString() : 'N/A'}</p>
+                                    <p className="font-semibold text-primary">{project.name}</p>
+                                    <p className="text-sm text-muted-foreground">End Date: {project.end_date ? new Date(project.end_date).toLocaleDateString() : 'N/A'}</p>
                                 </div>
                                 <div className="flex -space-x-2">
                                     {project.teamMembers?.slice(0,3).map(member => (
@@ -114,39 +118,39 @@ const Dashboard: React.FC<DashboardProps> = ({ navigateTo, projects }) => {
                                 </div>
                             </div>
                         ))}
-                        {recentProjects.length === 0 && <p className="text-neutral-medium">No recent projects.</p>}
+                        {recentProjects.length === 0 && <p className="text-muted-foreground">No recent projects.</p>}
                     </div>
                 </Card>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card className="lg:col-span-1">
-                    <h3 className="text-xl font-semibold text-neutral-darkest mb-4">Projects by Status</h3>
+                <Card className="lg:col-span-1 p-6">
+                    <h3 className="text-xl font-semibold text-foreground mb-4">Projects by Status</h3>
                     <div style={{ width: '100%', height: 300 }}>
                         <ResponsiveContainer>
                             <PieChart>
-                                <Pie data={projectStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} labelLine={false} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                                <Pie data={projectStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} fill="#8884d8" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
                                     {projectStatusData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={statusColors[entry.name as ProjectStatus]} />
+                                        <Cell key={`cell-${index}`} fill={statusThemeColors[entry.name as ProjectStatus][theme]} />
                                     ))}
                                 </Pie>
-                                <Tooltip />
+                                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
                 </Card>
-                <Card className="lg:col-span-2">
-                    <h3 className="text-xl font-semibold text-neutral-darkest mb-4">Budget vs. Spent</h3>
+                <Card className="lg:col-span-2 p-6">
+                    <h3 className="text-xl font-semibold text-foreground mb-4">Budget vs. Spent</h3>
                      <div style={{ width: '100%', height: 300 }}>
                         <ResponsiveContainer>
                             <BarChart data={budgetData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} angle={-20} textAnchor="end" height={60} />
-                                <YAxis tickFormatter={(value) => `₹${Number(value) / 100000}L`} />
-                                <Tooltip formatter={(value) => `₹${Number(value).toLocaleString()}`} />
-                                <Legend />
-                                <Bar dataKey="Budget" fill="#4C9AFF" radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="Spent" fill="#0052CC" radius={[4, 4, 0, 0]} />
+                                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                                <XAxis dataKey="name" tick={{ fontSize: 12, fill: tickColor }} interval={0} angle={-20} textAnchor="end" height={60} />
+                                <YAxis tickFormatter={(value) => `₹${Number(value) / 100000}L`} tick={{ fontSize: 12, fill: tickColor }} />
+                                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} cursor={{fill: 'hsla(var(--primary), 0.1)'}} />
+                                <Legend wrapperStyle={{ color: tickColor }}/>
+                                <Bar dataKey="Budget" fill={theme === 'dark' ? '#4C9AFF' : '#A5C8FF'} radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="Spent" fill={theme === 'dark' ? '#0052CC' : '#0065FF'} radius={[4, 4, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>

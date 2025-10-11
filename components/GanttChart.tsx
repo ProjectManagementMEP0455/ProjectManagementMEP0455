@@ -11,9 +11,9 @@ interface GanttChartProps {
 const GanttChart: React.FC<GanttChartProps> = ({ tasks, projectStartDate, projectEndDate }) => {
   if (!projectStartDate || !projectEndDate) {
     return (
-        <Card>
-            <h3 className="text-xl font-semibold text-neutral-darkest">Project Timeline (Gantt Chart)</h3>
-            <p className="text-neutral-medium text-center py-4">Project start and end dates must be set to display the timeline.</p>
+        <Card className="p-6">
+            <h3 className="text-xl font-semibold text-foreground">Project Timeline (Gantt Chart)</h3>
+            <p className="text-muted-foreground text-center py-4">Project start and end dates must be set to display the timeline.</p>
         </Card>
     );
   }
@@ -56,8 +56,8 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks, projectStartDate, projec
       const left = (monthStartOffset / totalDays) * 100;
       if (left >= 0 && left < 100) {
         markers.push(
-          <div key={currentDate.toString()} style={{ left: `${left}%` }} className="absolute h-full border-l border-gray-200">
-             <span className="absolute -top-5 text-xs text-neutral-medium">{currentDate.toLocaleString('default', { month: 'short' })}</span>
+          <div key={currentDate.toString()} style={{ left: `${left}%` }} className="absolute h-full border-l border-border">
+             <span className="absolute -top-5 text-xs text-muted-foreground">{currentDate.toLocaleString('default', { month: 'short' })}</span>
           </div>
         );
       }
@@ -67,12 +67,12 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks, projectStartDate, projec
   };
 
   return (
-    <Card>
-      <h3 className="text-xl font-semibold text-neutral-darkest mb-6">Project Timeline (Gantt Chart)</h3>
+    <Card className="p-6">
+      <h3 className="text-xl font-semibold text-foreground mb-6">Project Timeline (Gantt Chart)</h3>
       <div className="space-y-3 relative pt-6 overflow-x-auto">
         {/* Timeline Header */}
         <div className="relative h-6" style={{width: '100%'}}>
-          <div className="h-full border-b border-gray-300">
+          <div className="h-full border-b border-border">
             {renderMonthMarkers()}
           </div>
         </div>
@@ -81,22 +81,22 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks, projectStartDate, projec
         <div className="relative">
              {/* Today Marker */}
             {todayPosition >= 0 && todayPosition <= 100 && (
-                 <div style={{ left: `${todayPosition}%` }} className="absolute top-0 bottom-0 w-0.5 bg-status-red z-10" title={`Today: ${today.toLocaleDateString()}`}>
-                    <div className="absolute -top-5 -translate-x-1/2 bg-status-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">TODAY</div>
+                 <div style={{ left: `${todayPosition}%` }} className="absolute top-0 bottom-0 w-0.5 bg-destructive z-10" title={`Today: ${today.toLocaleDateString()}`}>
+                    <div className="absolute -top-5 -translate-x-1/2 bg-destructive text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">TODAY</div>
                  </div>
             )}
             
             {tasks.map((task, index) => (
               <div key={task.id} className="flex items-center h-12">
-                <div className="w-1/4 pr-4 truncate text-sm font-medium text-neutral-darkest flex-shrink-0">{task.name}</div>
-                <div className="w-3/4 h-8 bg-neutral-lightest rounded-md relative flex-grow">
+                <div className="w-1/4 pr-4 truncate text-sm font-medium text-foreground flex-shrink-0">{task.name}</div>
+                <div className="w-3/4 h-8 bg-secondary rounded-md relative flex-grow">
                   <div
-                    className="absolute bg-brand-light h-8 rounded-md flex items-center justify-start"
+                    className="absolute bg-primary/30 h-8 rounded-md flex items-center justify-start"
                     style={getTaskPosition(task)}
                     title={`${task.name} \nStart: ${task.start_date} \nDue: ${task.due_date} \nProgress: ${task.percent_complete || 0}%`}
                   >
                     <div 
-                        className="bg-brand-primary h-8 rounded-md" 
+                        className="bg-primary h-8 rounded-md" 
                         style={{width: `${task.percent_complete || 0}%`}}>
                     </div>
                   </div>
@@ -104,7 +104,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks, projectStartDate, projec
               </div>
             ))}
         </div>
-         {tasks.length === 0 && <p className="text-neutral-medium text-center py-4">No tasks to display in the timeline.</p>}
+         {tasks.length === 0 && <p className="text-muted-foreground text-center py-4">No tasks to display in the timeline.</p>}
       </div>
     </Card>
   );

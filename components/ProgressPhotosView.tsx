@@ -2,6 +2,8 @@ import React, { useState, useEffect, FormEvent } from 'react';
 import { Project, Profile, UserRole, ProgressPhoto } from '../types';
 import Card from './ui/Card';
 import { supabase } from '../lib/supabaseClient';
+import Button from './ui/Button';
+import Input from './ui/Input';
 
 interface ProgressPhotosViewProps {
     project: Project;
@@ -107,46 +109,46 @@ const ProgressPhotosView: React.FC<ProgressPhotosViewProps> = ({ project, userPr
     }, {} as Record<string, ProgressPhoto[]>);
 
     return (
-        <Card>
-            <h3 className="text-xl font-semibold text-neutral-darkest mb-4">Progress Photos</h3>
-            {error && <p className="text-red-500 bg-red-100 p-2 rounded-md mb-4">{error}</p>}
+        <Card className="p-6">
+            <h3 className="text-xl font-semibold text-foreground mb-4">Progress Photos</h3>
+            {error && <p className="text-red-400 bg-red-500/20 p-2 rounded-md mb-4">{error}</p>}
             
             {canUpload && (
-                 <form onSubmit={handleUpload} className="p-4 bg-gray-50 rounded-lg mb-6 space-y-3 border">
+                 <form onSubmit={handleUpload} className="p-4 bg-secondary/50 rounded-lg mb-6 space-y-3 border border-border">
                     <h4 className="font-semibold">Upload New Photo</h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="md:col-span-2">
                              <label className="text-sm font-medium">Caption</label>
-                             <input type="text" value={photoCaption} onChange={e => setPhotoCaption(e.target.value)} className="w-full form-input mt-1" placeholder="e.g., East wing ductwork installed"/>
+                             <Input type="text" value={photoCaption} onChange={e => setPhotoCaption(e.target.value)} placeholder="e.g., East wing ductwork installed"/>
                         </div>
                         <div>
                              <label className="text-sm font-medium">Photo Date</label>
-                             <input type="date" value={photoDate} onChange={e => setPhotoDate(e.target.value)} required className="w-full form-input mt-1" />
+                             <Input type="date" value={photoDate} onChange={e => setPhotoDate(e.target.value)} required />
                         </div>
                     </div>
                     <div>
                         <label className="text-sm font-medium">Image File</label>
-                        <input type="file" accept="image/png, image/jpeg, image/gif" onChange={e => setPhotoFile(e.target.files ? e.target.files[0] : null)} required className="w-full text-sm mt-1 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-light file:text-brand-primary hover:file:bg-blue-200"/>
+                        <Input type="file" accept="image/png, image/jpeg, image/gif" onChange={e => setPhotoFile(e.target.files ? e.target.files[0] : null)} required />
                     </div>
-                    <button type="submit" disabled={isUploading} className="w-full bg-brand-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-50">
+                    <Button type="submit" disabled={isUploading} variant="primary" className="w-full">
                         {isUploading ? "Uploading..." : "Upload Photo"}
-                    </button>
+                    </Button>
                  </form>
             )}
 
             {loading ? <p>Loading photos...</p> : (
                 <div className="space-y-8">
                     {Object.keys(photosByDate).length === 0 ? (
-                        <p className="text-neutral-medium text-center py-8">No photos have been uploaded for this project yet.</p>
+                        <p className="text-muted-foreground text-center py-8">No photos have been uploaded for this project yet.</p>
                     ) : (
                        Object.entries(photosByDate).map(([date, datePhotos]) => (
                            <div key={date}>
-                               <h4 className="font-bold text-lg text-neutral-darkest pb-2 border-b mb-4">{date}</h4>
+                               <h4 className="font-bold text-lg text-foreground pb-2 border-b border-border mb-4">{date}</h4>
                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                                    {datePhotos.map(photo => (
                                        <div key={photo.id} className="cursor-pointer group" onClick={() => setSelectedPhoto(photo)}>
-                                           <img src={photo.photo_url} alt={photo.caption || 'Progress Photo'} className="w-full h-32 object-cover rounded-lg shadow-md group-hover:shadow-xl transition-shadow"/>
-                                           <p className="text-xs text-neutral-medium mt-1 truncate">{photo.caption}</p>
+                                           <img src={photo.photo_url} alt={photo.caption || 'Progress Photo'} className="w-full h-32 object-cover rounded-lg shadow-md group-hover:shadow-xl transition-shadow border border-border"/>
+                                           <p className="text-xs text-muted-foreground mt-1 truncate">{photo.caption}</p>
                                        </div>
                                    ))}
                                </div>
@@ -157,13 +159,13 @@ const ProgressPhotosView: React.FC<ProgressPhotosViewProps> = ({ project, userPr
             )}
             
             {selectedPhoto && (
-                <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex justify-center items-center p-4" onClick={() => setSelectedPhoto(null)}>
-                    <div className="bg-white rounded-lg p-4 max-w-4xl max-h-[90vh] relative" onClick={e => e.stopPropagation()}>
-                        <button onClick={() => setSelectedPhoto(null)} className="absolute -top-3 -right-3 bg-white rounded-full p-1 text-gray-800 hover:text-red-600 z-10">&times;</button>
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-center items-center p-4" onClick={() => setSelectedPhoto(null)}>
+                    <div className="bg-card border border-border rounded-lg p-4 max-w-4xl max-h-[90vh] relative shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <button onClick={() => setSelectedPhoto(null)} className="absolute -top-3 -right-3 bg-background border border-border rounded-full p-1 text-foreground hover:text-destructive z-10 w-8 h-8 flex items-center justify-center">&times;</button>
                         <img src={selectedPhoto.photo_url} alt={selectedPhoto.caption || 'Progress Photo'} className="max-w-full max-h-[75vh] object-contain rounded-md"/>
                         <div className="mt-4 text-center">
                             <p className="font-semibold">{selectedPhoto.caption}</p>
-                            <p className="text-sm text-neutral-medium">Uploaded by {selectedPhoto.uploader?.full_name} on {new Date(selectedPhoto.created_at).toLocaleDateString()}</p>
+                            <p className="text-sm text-muted-foreground">Uploaded by {selectedPhoto.uploader?.full_name} on {new Date(selectedPhoto.created_at).toLocaleDateString()}</p>
                         </div>
                     </div>
                 </div>

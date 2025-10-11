@@ -2,6 +2,7 @@ import React from 'react';
 import { Task, TaskStatus, Profile, UserRole } from '../types';
 import Card from './ui/Card';
 import Avatar from './ui/Avatar';
+import Button from './ui/Button';
 
 interface KanbanBoardProps {
   tasks: Task[];
@@ -16,30 +17,30 @@ const TaskCard: React.FC<{ task: Task; onEdit: () => void; }> = ({ task, onEdit 
   const progress = task.percent_complete || 0;
   
   return (
-    <Card className="mb-4 p-4 cursor-pointer hover:shadow-lg relative transition-all duration-200" onClick={onEdit}>
+    <Card className="mb-4 p-4 cursor-pointer hover:shadow-lg relative transition-all duration-200 hover:border-primary/50" onClick={onEdit}>
       {task.pending_approval && (
-        <div className="absolute top-2 right-2 h-3 w-3 bg-status-yellow rounded-full ring-2 ring-white" title="Cost approval pending"></div>
+        <div className="absolute top-2 right-2 h-3 w-3 bg-yellow-400 rounded-full ring-2 ring-background" title="Cost approval pending"></div>
       )}
-      <p className="font-semibold text-neutral-darkest mb-2 pr-4">{task.name}</p>
+      <p className="font-semibold text-foreground mb-2 pr-4">{task.name}</p>
       
       <div className="text-sm space-y-3 mt-3">
-        <div className="flex justify-between items-center text-neutral-medium">
+        <div className="flex justify-between items-center text-muted-foreground">
           <span>Cost:</span>
-          <span className="font-semibold text-neutral-dark">
+          <span className="font-semibold text-foreground">
             ₹{(task.spent_cost || 0).toLocaleString()} / ₹{(task.budgeted_cost || 0).toLocaleString()}
           </span>
         </div>
-        <div className="flex justify-between items-center text-neutral-medium">
+        <div className="flex justify-between items-center text-muted-foreground">
             <span>Due Date:</span>
-            <span className={`font-semibold ${isOverdue ? 'text-status-red' : 'text-neutral-dark'}`}>
+            <span className={`font-semibold ${isOverdue ? 'text-destructive' : 'text-foreground'}`}>
                 {task.due_date ? new Date(task.due_date).toLocaleDateString() : 'N/A'}
             </span>
         </div>
       </div>
       
       <div className="mt-4">
-          <div className="w-full bg-neutral-lightest rounded-full h-2">
-              <div className="bg-status-green h-2 rounded-full" style={{ width: `${progress}%` }}></div>
+          <div className="w-full bg-secondary rounded-full h-2">
+              <div className="bg-green-500 h-2 rounded-full" style={{ width: `${progress}%` }}></div>
           </div>
       </div>
 
@@ -58,8 +59,8 @@ const KanbanColumn: React.FC<{
   onEditTask: (task: Task) => void;
 }> = ({ status, tasks, onEditTask }) => {
   return (
-    <div className="bg-neutral-lightest rounded-xl p-4 w-full">
-      <h3 className="font-bold text-lg text-neutral-darkest mb-4 text-center">{status} ({tasks.length})</h3>
+    <div className="bg-secondary/30 rounded-xl p-4 w-full">
+      <h3 className="font-bold text-lg text-foreground mb-4 text-center">{status} ({tasks.length})</h3>
       <div className="h-[60vh] overflow-y-auto px-1">
         {tasks.map(task => (
           <TaskCard key={task.id} task={task} onEdit={() => onEditTask(task)} />
@@ -73,9 +74,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskUpdate, onEditTa
   const columns: TaskStatus[] = [TaskStatus.ToDo, TaskStatus.InProgress, TaskStatus.Done];
   
   const tasksWithAssignee = tasks.map(task => {
-    // Assuming team members are available on the project object, which they should be.
-    // This is a placeholder for a more robust user fetching mechanism if needed.
-    const assignee = null; // In a real app, you'd find the user profile here.
+    const assignee = null;
     return {...task, assignee};
   });
 
@@ -84,14 +83,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskUpdate, onEditTa
   const canAddTask = userProfile?.role !== UserRole.SiteEngineerTechnician;
 
   return (
-    <Card>
+    <Card className="p-6">
         <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-semibold text-neutral-darkest">Task Board</h3>
+            <h3 className="text-xl font-semibold text-foreground">Task Board</h3>
             {canAddTask && (
-                <button onClick={onAddTask} className="bg-brand-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-brand-dark transition-colors flex items-center">
+                <Button onClick={onAddTask} variant="primary">
                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg>
                     Add Task
-                </button>
+                </Button>
             )}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

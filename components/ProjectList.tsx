@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Page, Project, ProjectStatus, Profile, UserRole } from '../types';
 import Card from './ui/Card';
@@ -11,10 +10,10 @@ interface ProjectListProps {
 }
 
 const statusColors: { [key: string]: string } = {
-  [ProjectStatus.Active]: 'bg-status-blue text-white',
-  [ProjectStatus.Planning]: 'bg-status-yellow text-neutral-dark',
-  [ProjectStatus.Completed]: 'bg-status-green text-white',
-  [ProjectStatus.OnHold]: 'bg-status-red text-white',
+  [ProjectStatus.Active]: 'bg-blue-500/20 text-blue-300',
+  [ProjectStatus.Planning]: 'bg-yellow-500/20 text-yellow-300',
+  [ProjectStatus.Completed]: 'bg-green-500/20 text-green-300',
+  [ProjectStatus.OnHold]: 'bg-red-500/20 text-red-300',
 };
 
 const ProjectCard: React.FC<{ project: Project; onClick: () => void; }> = ({ project, onClick }) => {
@@ -24,29 +23,29 @@ const ProjectCard: React.FC<{ project: Project; onClick: () => void; }> = ({ pro
     const teamMembers = project.teamMembers || [];
 
     return (
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={onClick}>
+        <Card className="p-6 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group" onClick={onClick}>
             <div className="flex justify-between items-start">
-                <h3 className="text-xl font-bold text-brand-primary mb-2">{project.name}</h3>
-                <span className={`px-3 py-1 text-sm font-semibold rounded-full ${statusColors[project.status]}`}>{project.status}</span>
+                <h3 className="text-xl font-bold text-primary mb-2">{project.name}</h3>
+                <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusColors[project.status]}`}>{project.status}</span>
             </div>
-            <p className="text-neutral-medium mb-4 h-12 overflow-hidden">{project.description}</p>
+            <p className="text-muted-foreground mb-4 h-12 overflow-hidden text-sm">{project.description}</p>
             
             <div className="mb-4">
-                <div className="flex justify-between text-sm text-neutral-medium mb-1">
+                <div className="flex justify-between text-sm text-muted-foreground mb-1">
                     <span>Progress</span>
                     <span>{progress.toFixed(0)}%</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div className="bg-brand-primary h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
+                <div className="w-full bg-secondary rounded-full h-2.5">
+                    <div className="bg-primary h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
                 </div>
             </div>
 
             <div className="flex justify-between items-center text-sm">
-                <div className="text-neutral-medium">
+                <div className="text-muted-foreground">
                     <span className="font-semibold">End Date:</span> {project.end_date ? new Date(project.end_date).toLocaleDateString() : 'N/A'}
                 </div>
                  <div className="flex -space-x-2">
-                    {teamMembers.map((profile: Profile) => <Avatar key={profile.id} profile={profile} size="md" />)}
+                    {teamMembers.slice(0, 4).map((profile: Profile) => <Avatar key={profile.id} profile={profile} size="md" />)}
                  </div>
             </div>
         </Card>
@@ -57,7 +56,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ navigateTo, projects, userPro
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-neutral-dark">Projects</h2>
+        <h2 className="text-3xl font-bold text-foreground">Projects</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {projects.map(project => (

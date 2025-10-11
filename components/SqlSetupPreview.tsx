@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
+import Button from './ui/Button';
 
-// FIX: The SQL script is now stored as a constant string within a React component.
 const sqlScript = `-- MEP-DASH: UNIVERSAL RESET & SETUP SCRIPT V4
 -- This script safely cleans up previous attempts and sets up the
 -- entire database from scratch for a multi-user, persistent application.
@@ -317,29 +317,28 @@ const SqlSetupPreview: React.FC = () => {
 
     return (
         <div className="space-y-4">
-            <p className="text-sm text-neutral-medium">
+            <p className="text-sm text-muted-foreground">
                 Copy the full SQL script below and run it in your Supabase SQL Editor to create the necessary tables, functions, and security policies.
             </p>
+            <div className="flex flex-wrap gap-4">
             {sqlEditorUrl && (
                 <a 
                     href={sqlEditorUrl} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="inline-block bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-green-600 text-white hover:bg-green-700 h-10 px-4 py-2"
                 >
                     Open Supabase SQL Editor
                 </a>
             )}
-            <div className="relative">
-                <pre className="bg-gray-800 text-white p-4 rounded-md max-h-64 overflow-auto text-xs">
+             <Button onClick={copyToClipboard} variant="secondary">
+                 {copySuccess || 'Copy SQL Script'}
+            </Button>
+            </div>
+            <div className="relative mt-4">
+                <pre className="bg-secondary text-foreground p-4 rounded-md max-h-64 overflow-auto text-xs">
                     <code>{sqlScript}</code>
                 </pre>
-                <button
-                    onClick={copyToClipboard}
-                    className="absolute top-2 right-2 bg-gray-600 hover:bg-gray-500 text-white font-semibold py-1 px-3 rounded-md text-sm"
-                >
-                    {copySuccess || 'Copy'}
-                </button>
             </div>
         </div>
     );

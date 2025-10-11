@@ -1,7 +1,9 @@
-
-
 import React, { useState, FormEvent, useEffect } from 'react';
 import { Task, TaskStatus, Profile, UserRole } from '../types';
+import Button from './ui/Button';
+import Input from './ui/Input';
+import Modal from './ui/Modal';
+import Textarea from './ui/Textarea';
 
 interface EditTaskModalProps {
   isOpen: boolean;
@@ -29,8 +31,8 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onUpdate
         setName(task.name);
         setDescription(task.description || '');
         setAssigneeId(task.assignee_id);
-        setStartDate(task.start_date || '');
-        setDueDate(task.due_date || '');
+        setStartDate(task.start_date?.split('T')[0] || '');
+        setDueDate(task.due_date?.split('T')[0] || '');
         setStatus(task.status as TaskStatus);
         setPercentComplete(task.percent_complete || 0);
         setBudgetedCost(task.budgeted_cost || 0);
@@ -71,83 +73,65 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onUpdate
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <h2 className="text-2xl font-bold text-neutral-dark mb-6">Edit Task</h2>
+    <Modal isOpen={isOpen} onClose={onClose} title="Edit Task">
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Standard task fields */}
           <div>
-            <label htmlFor="editTaskName" className="block text-sm font-medium text-neutral-medium">Task Name</label>
-            <input
-              type="text"
-              id="editTaskName"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
-              required
-            />
+            <label htmlFor="editTaskName" className="block text-sm font-medium text-muted-foreground">Task Name</label>
+            <Input type="text" id="editTaskName" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div>
-            <label htmlFor="editTaskDescription" className="block text-sm font-medium text-neutral-medium">Description</label>
-            <textarea
-              id="editTaskDescription"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
-            />
+            <label htmlFor="editTaskDescription" className="block text-sm font-medium text-muted-foreground">Description</label>
+            <Textarea id="editTaskDescription" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="editTaskStartDate" className="block text-sm font-medium text-neutral-medium">Start Date</label>
-              <input type="date" id="editTaskStartDate" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="mt-1 block w-full form-input" required />
+              <label htmlFor="editTaskStartDate" className="block text-sm font-medium text-muted-foreground">Start Date</label>
+              <Input type="date" id="editTaskStartDate" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
             </div>
             <div>
-              <label htmlFor="editTaskDueDate" className="block text-sm font-medium text-neutral-medium">Due Date</label>
-              <input type="date" id="editTaskDueDate" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="mt-1 block w-full form-input" required />
+              <label htmlFor="editTaskDueDate" className="block text-sm font-medium text-muted-foreground">Due Date</label>
+              <Input type="date" id="editTaskDueDate" value={dueDate} onChange={(e) => setDueDate(e.target.value)} required />
             </div>
           </div>
           <div>
-            <label htmlFor="editTaskAssignee" className="block text-sm font-medium text-neutral-medium">Assignee</label>
-            <select id="editTaskAssignee" value={assigneeId || ''} onChange={(e) => setAssigneeId(e.target.value || null)} className="mt-1 block w-full form-select">
+            <label htmlFor="editTaskAssignee" className="block text-sm font-medium text-muted-foreground">Assignee</label>
+            <select id="editTaskAssignee" value={assigneeId || ''} onChange={(e) => setAssigneeId(e.target.value || null)} className="mt-1 block w-full bg-input border border-border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-ring">
               <option value="">Unassigned</option>
               {teamMembers.map(user => <option key={user.id} value={user.id}>{user.full_name}</option>)}
             </select>
           </div>
           <div>
-            <label htmlFor="editTaskStatus" className="block text-sm font-medium text-neutral-medium">Status</label>
-            <select id="editTaskStatus" value={status} onChange={(e) => setStatus(e.target.value as TaskStatus)} className="mt-1 block w-full form-select">
+            <label htmlFor="editTaskStatus" className="block text-sm font-medium text-muted-foreground">Status</label>
+            <select id="editTaskStatus" value={status} onChange={(e) => setStatus(e.target.value as TaskStatus)} className="mt-1 block w-full bg-input border border-border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-ring">
               {Object.values(TaskStatus).map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
           <div>
-            <label htmlFor="editTaskPercent" className="block text-sm font-medium text-neutral-medium">Percent Complete: {percentComplete}%</label>
-            <input type="range" id="editTaskPercent" min="0" max="100" step="5" value={percentComplete} onChange={(e) => setPercentComplete(Number(e.target.value))} className="mt-1 block w-full"/>
+            <label htmlFor="editTaskPercent" className="block text-sm font-medium text-muted-foreground">Percent Complete: {percentComplete}%</label>
+            <input type="range" id="editTaskPercent" min="0" max="100" step="5" value={percentComplete} onChange={(e) => setPercentComplete(Number(e.target.value))} className="mt-1 block w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"/>
           </div>
 
-          {/* Budget and Cost Section */}
-          <div className="border-t pt-6 mt-6 space-y-4">
-            <h3 className="text-lg font-semibold text-neutral-dark">Budget & Cost</h3>
+          <div className="border-t border-border pt-6 mt-6 space-y-4">
+            <h3 className="text-lg font-semibold text-foreground">Budget & Cost</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  <div>
-                    <label htmlFor="taskBudget" className="block text-sm font-medium text-neutral-medium">Budgeted Cost (₹)</label>
-                    <input type="number" id="taskBudget" value={budgetedCost} onChange={(e) => setBudgetedCost(Number(e.target.value))} className="mt-1 block w-full form-input disabled:bg-gray-100" min="0" disabled={!isManager} />
+                    <label htmlFor="taskBudget" className="block text-sm font-medium text-muted-foreground">Budgeted Cost (₹)</label>
+                    <Input type="number" id="taskBudget" value={budgetedCost} onChange={(e) => setBudgetedCost(Number(e.target.value))} min="0" disabled={!isManager} />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-neutral-medium">Approved Spent (₹)</label>
-                    <p className="mt-1 text-lg font-semibold p-2 bg-gray-100 rounded-md">₹{(task.spent_cost || 0).toLocaleString()}</p>
+                    <label className="block text-sm font-medium text-muted-foreground">Approved Spent (₹)</label>
+                    <p className="mt-1 text-lg font-semibold p-2 bg-secondary rounded-md">₹{(task.spent_cost || 0).toLocaleString()}</p>
                 </div>
             </div>
-             <p className="text-xs text-neutral-medium mt-1">Total spent is automatically calculated from approved expenses. To add a new expense, please use the 'Finance' tab.</p>
+             <p className="text-xs text-muted-foreground mt-1">Total spent is calculated from approved expenses in the 'Finance' tab.</p>
           </div>
           
-          <div className="flex justify-end space-x-4 pt-4 border-t">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-neutral-dark bg-gray-200 rounded-md hover:bg-gray-300 transition-colors">Cancel</button>
-            <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-dark transition-colors">Save Changes</button>
+          <div className="flex justify-end space-x-4 pt-4 border-t border-border">
+            <Button type="button" onClick={onClose} variant="secondary">Cancel</Button>
+            <Button type="submit" variant="primary">Save Changes</Button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

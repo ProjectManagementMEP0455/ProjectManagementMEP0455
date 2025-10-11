@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Project } from '../types';
 import Card from './ui/Card';
 import { ai } from '../lib/geminiClient';
+import Button from './ui/Button';
 
 interface RiskAnalysisProps {
     project?: Project;
@@ -10,7 +11,7 @@ interface RiskAnalysisProps {
 
 const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
     return (
-        <div className="prose prose-sm max-w-none text-neutral-dark">
+        <div className="prose prose-sm dark:prose-invert max-w-none text-foreground">
             {content.split('\n').map((line, index) => {
                 if (line.startsWith('### ')) {
                     return <h3 key={index} className="text-md font-bold mt-3 mb-1">{line.substring(4)}</h3>;
@@ -122,31 +123,37 @@ const RiskAnalysis: React.FC<RiskAnalysisProps> = ({ project, projects }) => {
     const buttonText = isPortfolioAnalysis ? 'Analyze Portfolio Risks' : 'Analyze Project Risks';
 
     return (
-        <Card>
-            <div className="flex justify-between items-start">
+        <Card className="p-6">
+            <div className="flex justify-between items-start flex-col sm:flex-row gap-4">
                 <div>
-                    <h3 className="text-xl font-semibold text-neutral-dark">{title}</h3>
-                    <p className="text-sm text-neutral-medium mt-1">Leverage AI to identify potential issues and get mitigation strategies.</p>
+                    <h3 className="text-xl font-semibold text-foreground">{title}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">Leverage AI to identify potential issues and get mitigation strategies.</p>
                 </div>
-                <button 
+                <Button 
                     onClick={handleAnalyze} 
                     disabled={loading}
-                    className="bg-brand-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    variant="primary"
+                    className="whitespace-nowrap"
                 >
                     {loading ? 'Analyzing...' : buttonText}
-                </button>
+                </Button>
             </div>
             
-            {error && <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-md">{error}</div>}
+            {error && <div className="mt-4 p-3 bg-red-500/20 text-red-300 rounded-md">{error}</div>}
 
             {loading && (
                 <div className="mt-4 text-center p-8">
-                    <p className="text-neutral-medium">AI is analyzing the data... this may take a moment.</p>
+                    <div className="flex justify-center items-center space-x-2">
+                        <div className="w-4 h-4 bg-primary rounded-full animate-pulse [animation-delay:-0.3s]"></div>
+                        <div className="w-4 h-4 bg-primary rounded-full animate-pulse [animation-delay:-0.15s]"></div>
+                        <div className="w-4 h-4 bg-primary rounded-full animate-pulse"></div>
+                    </div>
+                    <p className="text-muted-foreground mt-4">AI is analyzing the data... this may take a moment.</p>
                 </div>
             )}
             
             {analysis && (
-                <div className="mt-6 border-t border-gray-200 pt-4">
+                <div className="mt-6 border-t border-border pt-4">
                     <MarkdownRenderer content={analysis} />
                 </div>
             )}

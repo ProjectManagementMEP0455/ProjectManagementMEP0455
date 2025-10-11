@@ -11,9 +11,9 @@ interface BudgetViewProps {
 const formatCurrency = (amount: number) => `₹${amount.toLocaleString()}`;
 
 const getVarianceClass = (variance: number) => {
-    if (variance < 0) return 'text-status-red font-bold';
-    if (variance > 0) return 'text-status-green font-semibold';
-    return 'text-neutral-medium';
+    if (variance < 0) return 'text-red-400 font-bold';
+    if (variance > 0) return 'text-green-400 font-semibold';
+    return 'text-muted-foreground';
 };
 
 const GaugeChart: React.FC<{ value: number, name: string, color: string }> = ({ value, name, color }) => (
@@ -29,7 +29,7 @@ const GaugeChart: React.FC<{ value: number, name: string, color: string }> = ({ 
             >
                 <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
                 <RadialBar
-                    background
+                    background={{ fill: 'hsl(var(--secondary))' }}
                     dataKey="value"
                     cornerRadius={10}
                     fill={color}
@@ -39,13 +39,13 @@ const GaugeChart: React.FC<{ value: number, name: string, color: string }> = ({ 
                     y="70%"
                     textAnchor="middle"
                     dominantBaseline="middle"
-                    className="text-3xl font-bold fill-current text-neutral-darkest"
+                    className="text-3xl font-bold fill-foreground"
                 >
                     {`${value.toFixed(0)}%`}
                 </text>
             </RadialBarChart>
         </ResponsiveContainer>
-        <p className="text-sm font-semibold text-neutral-medium -mt-4">{name}</p>
+        <p className="text-sm font-semibold text-muted-foreground -mt-4">{name}</p>
     </div>
 );
 
@@ -61,21 +61,21 @@ const BudgetView: React.FC<BudgetViewProps> = ({ project }) => {
     
 
     return (
-        <Card>
-            <h3 className="text-xl font-semibold text-neutral-darkest mb-6">Budget vs. Actuals Analysis</h3>
+        <Card className="p-6">
+            <h3 className="text-xl font-semibold text-foreground mb-6">Budget vs. Actuals Analysis</h3>
 
-            <Card className="bg-neutral-lightest">
+            <Card className="bg-secondary/50 p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-center">
                     <div className="lg:col-span-2">
-                        <h4 className="font-bold text-neutral-darkest text-lg">Project Financial Summary</h4>
-                        <div className="mt-4 space-y-2 text-neutral-dark">
+                        <h4 className="font-bold text-foreground text-lg">Project Financial Summary</h4>
+                        <div className="mt-4 space-y-2 text-foreground">
                             <p className="flex justify-between"><span>Total Budget:</span> <span className="font-semibold">{formatCurrency(totalBudget)}</span></p>
                             <p className="flex justify-between"><span>Amount Spent:</span> <span className="font-semibold">{formatCurrency(totalSpent)}</span></p>
                             <p className={`flex justify-between ${getVarianceClass(totalVariance)}`}><span>Variance:</span> <span className="font-semibold">{formatCurrency(totalVariance)}</span></p>
                         </div>
                     </div>
                     <div className="lg:col-span-1">
-                        <GaugeChart value={budgetUtilization} name="Budget Utilized" color="#0052CC" />
+                        <GaugeChart value={budgetUtilization} name="Budget Utilized" color="hsl(var(--primary))" />
                     </div>
                     <div className="lg:col-span-1">
                          <GaugeChart value={overallProgress} name="Work Completed" color="#36B37E" />
@@ -83,16 +83,16 @@ const BudgetView: React.FC<BudgetViewProps> = ({ project }) => {
                 </div>
             </Card>
 
-            <h4 className="text-lg font-semibold text-neutral-darkest my-6">Task-wise Breakdown</h4>
-            <div className="overflow-x-auto border border-gray-200 rounded-lg">
+            <h4 className="text-lg font-semibold text-foreground my-6">Task-wise Breakdown</h4>
+            <div className="overflow-x-auto border border-border rounded-lg">
                 <table className="w-full text-left">
-                    <thead className="bg-gray-50 border-b border-gray-200">
+                    <thead className="bg-secondary/50 border-b border-border">
                         <tr>
-                            <th className="p-4 text-sm font-semibold text-neutral-medium w-1/3">Task Name</th>
-                            <th className="p-4 text-sm font-semibold text-neutral-medium w-1/3">Budget vs Spent</th>
-                            <th className="p-4 text-sm font-semibold text-neutral-medium text-right">Budgeted</th>
-                            <th className="p-4 text-sm font-semibold text-neutral-medium text-right">Spent</th>
-                            <th className="p-4 text-sm font-semibold text-neutral-medium text-right">Variance</th>
+                            <th className="p-4 text-sm font-semibold text-muted-foreground w-1/3">Task Name</th>
+                            <th className="p-4 text-sm font-semibold text-muted-foreground w-1/3">Budget vs Spent</th>
+                            <th className="p-4 text-sm font-semibold text-muted-foreground text-right">Budgeted</th>
+                            <th className="p-4 text-sm font-semibold text-muted-foreground text-right">Spent</th>
+                            <th className="p-4 text-sm font-semibold text-muted-foreground text-right">Variance</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -103,19 +103,19 @@ const BudgetView: React.FC<BudgetViewProps> = ({ project }) => {
                             const spentPercentage = budget > 0 ? (spent / budget) * 100 : 0;
                             
                             return (
-                                <tr key={task.id} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50">
-                                    <td className="p-4 font-medium text-neutral-dark">{task.name}</td>
+                                <tr key={task.id} className="border-b border-border last:border-b-0 hover:bg-muted">
+                                    <td className="p-4 font-medium text-foreground">{task.name}</td>
                                     <td className="p-4">
-                                        <div className="w-full bg-brand-light h-5 rounded">
+                                        <div className="w-full bg-secondary h-5 rounded">
                                             <div 
-                                                className={`h-5 rounded ${spent > budget ? 'bg-status-red' : 'bg-brand-primary'}`}
+                                                className={`h-5 rounded ${spent > budget ? 'bg-destructive' : 'bg-primary'}`}
                                                 style={{width: `${Math.min(spentPercentage, 100)}%`}}
                                                 title={`Spent ${spentPercentage.toFixed(0)}% of budget`}
                                             ></div>
                                         </div>
                                     </td>
-                                    <td className="p-4 text-neutral-medium text-right">{formatCurrency(budget)}</td>
-                                    <td className="p-4 text-neutral-dark text-right font-semibold">{formatCurrency(spent)}</td>
+                                    <td className="p-4 text-muted-foreground text-right">{formatCurrency(budget)}</td>
+                                    <td className="p-4 text-foreground text-right font-semibold">{formatCurrency(spent)}</td>
                                     <td className={`p-4 text-right ${getVarianceClass(variance)}`}>
                                         {formatCurrency(variance)}
                                     </td>
@@ -124,7 +124,7 @@ const BudgetView: React.FC<BudgetViewProps> = ({ project }) => {
                         })}
                          {project.tasks.length === 0 && (
                             <tr>
-                                <td colSpan={5} className="text-center p-8 text-neutral-medium">No tasks found for this project.</td>
+                                <td colSpan={5} className="text-center p-8 text-muted-foreground">No tasks found for this project.</td>
                             </tr>
                         )}
                     </tbody>

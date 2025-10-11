@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect, FormEvent } from 'react';
-// FIX: Import `Milestone` type from `../types` to resolve `Cannot find name 'Milestone'` error when casting the `milestones` property during project data refresh.
 import { Project, Profile, UserRole, Request, Expense, Task, RequestStatus, Material, Milestone } from '../types';
 import Card from './ui/Card';
 import { supabase } from '../lib/supabaseClient';
+import Button from './ui/Button';
+import Input from './ui/Input';
 
 interface FinanceViewProps {
     project: Project;
@@ -12,10 +12,10 @@ interface FinanceViewProps {
 }
 
 const statusColors: { [key in RequestStatus]: string } = {
-    [RequestStatus.Pending]: 'bg-status-yellow text-neutral-darkest',
-    [RequestStatus.Approved]: 'bg-status-blue text-white',
-    [RequestStatus.Rejected]: 'bg-status-red text-white',
-    [RequestStatus.Processed]: 'bg-status-green text-white',
+    [RequestStatus.Pending]: 'bg-yellow-500/20 text-yellow-300',
+    [RequestStatus.Approved]: 'bg-blue-500/20 text-blue-300',
+    [RequestStatus.Rejected]: 'bg-red-500/20 text-red-300',
+    [RequestStatus.Processed]: 'bg-green-500/20 text-green-300',
 };
 
 const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdateProject }) => {
@@ -197,7 +197,7 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
                 };
                 onUpdateProject(formattedProject as Project);
             }
-            await fetchData(); // Refetch finance data for the view
+            await fetchData();
             setNewExpenseDesc('');
             setNewExpenseAmount('');
             setNewExpenseTaskId('');
@@ -211,87 +211,87 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <Card>
-                <h3 className="text-xl font-semibold text-neutral-darkest mb-4">Material/Expense Requests</h3>
+            <Card className="p-6">
+                <h3 className="text-xl font-semibold text-foreground mb-4">Material/Expense Requests</h3>
                 {canCreateRequest && (
-                    <form onSubmit={handleRequestSubmit} className="p-4 bg-gray-50 rounded-lg mb-6 space-y-3">
+                    <form onSubmit={handleRequestSubmit} className="p-4 bg-secondary/50 rounded-lg mb-6 space-y-3">
                         <h4 className="font-semibold">Create New Request</h4>
                         <div>
                             <label className="text-sm font-medium">Description</label>
-                            <input type="text" list="materials-list" value={newRequestDesc} onChange={e => setNewRequestDesc(e.target.value)} required className="w-full form-input mt-1" placeholder="e.g., 50 bags of cement" />
+                            <Input type="text" list="materials-list" value={newRequestDesc} onChange={e => setNewRequestDesc(e.target.value)} required placeholder="e.g., 50 bags of cement" />
                             <datalist id="materials-list">
                                 {materials.map(m => <option key={m.id} value={m.name} />)}
                             </datalist>
                         </div>
                         <div>
                             <label className="text-sm font-medium">Estimated Cost (₹)</label>
-                            <input type="number" value={newRequestCost} onChange={e => setNewRequestCost(e.target.value)} required className="w-full form-input mt-1" placeholder="25000" />
+                            <Input type="number" value={newRequestCost} onChange={e => setNewRequestCost(e.target.value)} required placeholder="25000" />
                         </div>
                          <div>
                             <label className="text-sm font-medium">Attach Reference (Optional)</label>
-                            <input type="file" onChange={e => setNewRequestFile(e.target.files ? e.target.files[0] : null)} className="w-full text-sm mt-1"/>
+                            <Input type="file" onChange={e => setNewRequestFile(e.target.files ? e.target.files[0] : null)} />
                          </div>
-                        <button type="submit" disabled={isSubmittingRequest} className="w-full bg-brand-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-50">
+                        <Button type="submit" disabled={isSubmittingRequest} variant="primary" className="w-full">
                             {isSubmittingRequest ? "Submitting..." : "Submit Request"}
-                        </button>
+                        </Button>
                     </form>
                 )}
-                <div className="space-y-4 max-h-96 overflow-y-auto">
+                <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
                     {requests.map(req => (
-                        <div key={req.id} className="p-3 border rounded-md">
+                        <div key={req.id} className="p-3 border border-border rounded-md">
                             <div className="flex justify-between items-start">
                                 <div>
                                     <p className="font-semibold">{req.description}</p>
-                                    <p className="text-sm text-neutral-medium">By: {req.requester?.full_name || '...'} on {new Date(req.created_at).toLocaleDateString()}</p>
-                                    <p className="text-sm text-neutral-dark font-bold">Est. Cost: ₹{req.estimated_cost.toLocaleString()}</p>
-                                     {req.document_url && <a href={req.document_url} target="_blank" rel="noopener noreferrer" className="text-sm text-brand-primary hover:underline font-semibold">View Attachment</a>}
+                                    <p className="text-sm text-muted-foreground">By: {req.requester?.full_name || '...'} on {new Date(req.created_at).toLocaleDateString()}</p>
+                                    <p className="text-sm text-foreground font-bold">Est. Cost: ₹{req.estimated_cost.toLocaleString()}</p>
+                                     {req.document_url && <a href={req.document_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline font-semibold">View Attachment</a>}
                                 </div>
                                 <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusColors[req.status]}`}>{req.status}</span>
                             </div>
                             {canManageFinances && req.status === 'Pending' && (
                                 <div className="flex justify-end space-x-2 mt-2">
-                                    <button onClick={() => handleRequestUpdate(req.id, RequestStatus.Rejected)} className="px-2 py-1 text-xs bg-status-red text-white rounded hover:bg-red-700">Reject</button>
-                                    <button onClick={() => handleRequestUpdate(req.id, RequestStatus.Approved)} className="px-2 py-1 text-xs bg-status-green text-white rounded hover:bg-green-700">Approve</button>
+                                    <Button onClick={() => handleRequestUpdate(req.id, RequestStatus.Rejected)} size="sm" variant="destructive">Reject</Button>
+                                    <Button onClick={() => handleRequestUpdate(req.id, RequestStatus.Approved)} size="sm" className="bg-green-500 hover:bg-green-600">Approve</Button>
                                 </div>
                             )}
                         </div>
                     ))}
-                    {requests.length === 0 && <p className="text-neutral-medium text-center">No requests yet.</p>}
+                    {requests.length === 0 && <p className="text-muted-foreground text-center">No requests yet.</p>}
                 </div>
             </Card>
-            <Card>
-                <h3 className="text-xl font-semibold text-neutral-darkest mb-4">Logged Expenses</h3>
+            <Card className="p-6">
+                <h3 className="text-xl font-semibold text-foreground mb-4">Logged Expenses</h3>
                 {canManageFinances && (
-                     <form onSubmit={handleExpenseSubmit} className="p-4 bg-gray-50 rounded-lg mb-6 space-y-3">
+                     <form onSubmit={handleExpenseSubmit} className="p-4 bg-secondary/50 rounded-lg mb-6 space-y-3">
                          <h4 className="font-semibold">Add New Expense</h4>
-                         <div><label className="text-sm font-medium">Description</label><input type="text" value={newExpenseDesc} onChange={e => setNewExpenseDesc(e.target.value)} required className="w-full form-input mt-1" /></div>
+                         <div><label className="text-sm font-medium">Description</label><Input type="text" value={newExpenseDesc} onChange={e => setNewExpenseDesc(e.target.value)} required /></div>
                          <div className="grid grid-cols-2 gap-4">
-                             <div><label className="text-sm font-medium">Amount (₹)</label><input type="number" value={newExpenseAmount} onChange={e => setNewExpenseAmount(e.target.value)} required className="w-full form-input mt-1" /></div>
-                             <div><label className="text-sm font-medium">Expense Date</label><input type="date" value={newExpenseDate} onChange={e => setNewExpenseDate(e.target.value)} required className="w-full form-input mt-1" /></div>
+                             <div><label className="text-sm font-medium">Amount (₹)</label><Input type="number" value={newExpenseAmount} onChange={e => setNewExpenseAmount(e.target.value)} required /></div>
+                             <div><label className="text-sm font-medium">Expense Date</label><Input type="date" value={newExpenseDate} onChange={e => setNewExpenseDate(e.target.value)} required /></div>
                          </div>
                          <div>
                              <label className="text-sm font-medium">Link to Task</label>
-                             <select value={newExpenseTaskId} onChange={e => setNewExpenseTaskId(e.target.value)} required className="w-full form-select mt-1">
+                             <select value={newExpenseTaskId} onChange={e => setNewExpenseTaskId(e.target.value)} required className="mt-1 block w-full bg-input border-border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-ring">
                                  <option value="">Select a task...</option>
                                  {project.tasks.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                              </select>
                          </div>
                           <div>
                             <label className="text-sm font-medium">Attach Invoice/Receipt (Optional)</label>
-                            <input type="file" onChange={e => setNewExpenseFile(e.target.files ? e.target.files[0] : null)} className="w-full text-sm mt-1"/>
+                            <Input type="file" onChange={e => setNewExpenseFile(e.target.files ? e.target.files[0] : null)} />
                          </div>
-                         <button type="submit" disabled={isSubmittingExpense} className="w-full bg-brand-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-50">{isSubmittingExpense ? "Submitting..." : "Add Expense"}</button>
+                         <Button type="submit" disabled={isSubmittingExpense} variant="primary" className="w-full">{isSubmittingExpense ? "Submitting..." : "Add Expense"}</Button>
                      </form>
                 )}
-                 <div className="space-y-2 max-h-96 overflow-y-auto">
+                 <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
                      {expenses.map(exp => (
-                         <div key={exp.id} className="p-3 border rounded-md text-sm">
-                              <p className="font-semibold">₹{exp.amount.toLocaleString()}: <span className="font-normal">{exp.description}</span></p>
-                              <p className="text-neutral-medium">Task: {exp.task?.name || 'N/A'} | Date: {new Date(exp.expense_date).toLocaleDateString()}</p>
-                              {exp.document_url && <a href={exp.document_url} target="_blank" rel="noopener noreferrer" className="text-brand-primary hover:underline font-semibold">View Document</a>}
+                         <div key={exp.id} className="p-3 border border-border rounded-md text-sm">
+                              <p className="font-semibold text-foreground">₹{exp.amount.toLocaleString()}: <span className="font-normal">{exp.description}</span></p>
+                              <p className="text-muted-foreground">Task: {exp.task?.name || 'N/A'} | Date: {new Date(exp.expense_date).toLocaleDateString()}</p>
+                              {exp.document_url && <a href={exp.document_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">View Document</a>}
                          </div>
                      ))}
-                     {expenses.length === 0 && <p className="text-neutral-medium text-center">No expenses logged yet.</p>}
+                     {expenses.length === 0 && <p className="text-muted-foreground text-center">No expenses logged yet.</p>}
                  </div>
             </Card>
         </div>

@@ -1,9 +1,11 @@
-
 import React, { useState, FormEvent, useEffect } from 'react';
 import { Profile } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import Avatar from './ui/Avatar';
 import Card from './ui/Card';
+import Button from './ui/Button';
+import Input from './ui/Input';
+import Textarea from './ui/Textarea';
 
 type NewProjectFormData = {
   name: string;
@@ -79,70 +81,42 @@ const NewProjectPage: React.FC<NewProjectPageProps> = ({ onAddProject }) => {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h2 className="text-3xl font-bold text-neutral-dark mb-6">Create a New Project</h2>
+      <h2 className="text-3xl font-bold text-foreground mb-6">Create a New Project</h2>
       <Card>
-        <form onSubmit={handleSubmit} className="space-y-6 p-4">
+        <form onSubmit={handleSubmit} className="space-y-6 p-6">
           <div>
-            <label htmlFor="projectName" className="block text-sm font-medium text-neutral-medium">Project Name</label>
-            <input
-              type="text"
-              id="projectName"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
-              required
-            />
+            <label htmlFor="projectName" className="block text-sm font-medium text-muted-foreground">Project Name</label>
+            <Input type="text" id="projectName" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div>
-            <label htmlFor="projectDescription" className="block text-sm font-medium text-neutral-medium">Description</label>
-            <textarea
-              id="projectDescription"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={4}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
-              required
-            />
+            <label htmlFor="projectDescription" className="block text-sm font-medium text-muted-foreground">Description</label>
+            <Textarea id="projectDescription" value={description} onChange={(e) => setDescription(e.target.value)} rows={4} required />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="projectStartDate" className="block text-sm font-medium text-neutral-medium">Start Date</label>
-              <input
-                type="date"
-                id="projectStartDate"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
-                required
-              />
+              <label htmlFor="projectStartDate" className="block text-sm font-medium text-muted-foreground">Start Date</label>
+              <Input type="date" id="projectStartDate" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
             </div>
             <div>
-              <label htmlFor="projectEndDate" className="block text-sm font-medium text-neutral-medium">End Date</label>
-              <input
-                type="date"
-                id="projectEndDate"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
-                required
-              />
+              <label htmlFor="projectEndDate" className="block text-sm font-medium text-muted-foreground">End Date</label>
+              <Input type="date" id="projectEndDate" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-neutral-medium">Assign Team Members</label>
-            <div className="mt-2 border border-gray-300 rounded-md max-h-52 overflow-y-auto p-2">
+            <label className="block text-sm font-medium text-muted-foreground">Assign Team Members</label>
+            <div className="mt-2 border border-border rounded-md max-h-52 overflow-y-auto p-2">
                 {loadingUsers ? <p className="text-center p-4">Loading users...</p> : allUsers.map(user => (
-                    <div key={user.id} className="flex items-center justify-between p-2 rounded-md hover:bg-gray-100">
+                    <div key={user.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
                         <div className="flex items-center space-x-3">
                             <Avatar profile={user} size="md"/>
                             <div>
                                 <p className="font-semibold">{user.full_name}</p>
-                                <p className="text-xs text-neutral-medium">{user.role}</p>
+                                <p className="text-xs text-muted-foreground">{user.role}</p>
                             </div>
                         </div>
                         <input
                             type="checkbox"
-                            className="h-5 w-5 rounded text-brand-primary focus:ring-brand-primary"
+                            className="h-5 w-5 rounded bg-input border-border text-primary focus:ring-primary"
                             checked={selectedTeamMemberIds.includes(user.id)}
                             onChange={() => handleTeamMemberToggle(user.id)}
                         />
@@ -151,9 +125,9 @@ const NewProjectPage: React.FC<NewProjectPageProps> = ({ onAddProject }) => {
             </div>
           </div>
           <div className="flex justify-end pt-4">
-            <button type="submit" disabled={isSubmitting} className="px-6 py-3 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <Button type="submit" disabled={isSubmitting} variant="primary">
               {isSubmitting ? 'Creating Project...' : 'Create Project'}
-            </button>
+            </Button>
           </div>
         </form>
       </Card>

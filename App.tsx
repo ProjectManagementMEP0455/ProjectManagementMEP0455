@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, createContext, useContext } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabaseClient';
 import { Page, Profile, Project, ProjectStatus } from './types';
@@ -21,7 +20,48 @@ type NewProjectFormData = {
   teamMemberIds: string[];
 };
 
-const App: React.FC = () => {
+type Theme = 'dark' | 'light';
+
+type ThemeContextType = {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+};
+
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [theme, setTheme] = useState<Theme>('dark');
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as Theme | null;
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+    setTheme(initialTheme);
+  }, []);
+  
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark');
+    root.classList.add(theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+};
+
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (context === undefined) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
+};
+
+const AppContent: React.FC = () => {
   const [isSupabaseConfigured, setIsSupabaseConfigured] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
@@ -29,6 +69,7 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState<Page>(Page.Dashboard);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     const supabaseUrl = localStorage.getItem('supabaseUrl');
@@ -61,7 +102,6 @@ const App: React.FC = () => {
   const fetchAllData = async (userId: string) => {
     setLoading(true);
     try {
-      // Fetch profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -70,8 +110,6 @@ const App: React.FC = () => {
       if (profileError) throw profileError;
       setUserProfile(profileData);
 
-      // Fetch projects with related data using a more robust query
-      // Admins will see all projects due to RLS policies; other users will only see their own.
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select(`
@@ -84,17 +122,11 @@ const App: React.FC = () => {
         
       if (projectsError) throw projectsError;
 
-      const formattedProjects = (projectsData || []).map((p: any) => {
-        const teamMembers = (p.project_team_members || [])
-          .map((ptm: any) => ptm.profile) // Use .profile (singular, from alias)
-          .filter(Boolean); // Filter out any null profiles from failed joins
-
-        return {
-          ...p,
-          status: p.status as ProjectStatus,
-          teamMembers: teamMembers
-        };
-      });
+      const formattedProjects = (projectsData || []).map((p: any) => ({
+        ...p,
+        status: p.status as ProjectStatus,
+        teamMembers: (p.project_team_members || []).map((ptm: any) => ptm.profile).filter(Boolean)
+      }));
       setProjects(formattedProjects);
 
     } catch (error: any) {
@@ -154,7 +186,6 @@ const App: React.FC = () => {
         }
 
         await fetchAllData(session.user.id);
-        // Navigate to the projects list after successful creation
         navigateTo(Page.Projects);
 
     } catch (error: any) {
@@ -188,7 +219,9 @@ const App: React.FC = () => {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen bg-neutral-lightest">Loading...</div>;
+    return <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
+        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+    </div>;
   }
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
@@ -210,16 +243,32 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-neutral-lightest">
-      <Sidebar currentPage={currentPage} navigateTo={navigateTo} userProfile={userProfile} />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header user={userProfile} />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-neutral-lightest p-8">
+    <div className="flex h-screen bg-background text-foreground">
+      <Sidebar 
+        currentPage={currentPage} 
+        navigateTo={navigateTo} 
+        userProfile={userProfile}
+        isCollapsed={isSidebarCollapsed}
+      />
+      <div className="flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out">
+        <Header 
+            user={userProfile} 
+            isSidebarCollapsed={isSidebarCollapsed}
+            setIsSidebarCollapsed={setIsSidebarCollapsed}
+        />
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-4 sm:p-6 lg:p-8">
             {renderContent()}
         </main>
       </div>
     </div>
   );
 };
+
+
+const App: React.FC = () => (
+    <ThemeProvider>
+        <AppContent />
+    </ThemeProvider>
+);
 
 export default App;
