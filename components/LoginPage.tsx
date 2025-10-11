@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -5,107 +6,120 @@ const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isSigningUp, setIsSigningUp] = useState(false);
   const [fullName, setFullName] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
-  const handleAuth = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setMessage('');
     setLoading(true);
-    setError(null);
-    setMessage(null);
-
-    try {
-      if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: fullName,
-              avatar_url: `https://i.pravatar.cc/150?u=${email}` // Default avatar
-            }
-          }
-        });
-        if (error) throw error;
-        setMessage('Check your email for the login link! (If email confirmation is enabled)');
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
-      }
-    } catch (error: any) {
-      setError(error.error_description || error.message);
-    } finally {
-      setLoading(false);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setError(error.message);
     }
+    setLoading(false);
+  };
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setMessage('');
+    setLoading(true);
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+        },
+      },
+    });
+    if (error) {
+      setError(error.message);
+    } else if (data.user) {
+      setMessage('Sign up successful! Please check your email to verify your account.');
+      setIsSigningUp(false); // Switch back to login view
+    }
+    setLoading(false);
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="p-8 bg-white rounded-lg shadow-md w-full max-w-sm">
-        <h1 className="text-3xl font-bold text-center text-brand-primary mb-2">MEP-Dash</h1>
-        <p className="text-center text-neutral-medium mb-6">Project Management for MEP Engineers</p>
-        
-        <div className="flex border-b mb-6">
-          <button onClick={() => {setIsSignUp(false); setError(null);}} className={`w-1/2 py-2 font-semibold ${!isSignUp ? 'border-b-2 border-brand-primary text-brand-primary' : 'text-neutral-medium'}`}>
-            Sign In
-          </button>
-          <button onClick={() => {setIsSignUp(true); setError(null);}} className={`w-1/2 py-2 font-semibold ${isSignUp ? 'border-b-2 border-brand-primary text-brand-primary' : 'text-neutral-medium'}`}>
-            Sign Up
-          </button>
-        </div>
-
-        {error && <p className="bg-red-100 text-red-700 p-3 rounded-md mb-4 text-center text-sm">{error}</p>}
-        {message && <p className="bg-green-100 text-green-700 p-3 rounded-md mb-4 text-center text-sm">{message}</p>}
-
-        <form onSubmit={handleAuth} className="space-y-4">
-          {isSignUp && (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="p-8 bg-white rounded-lg shadow-md w-full max-w-md">
+        <h1 className="text-2xl font-bold text-center text-brand-primary mb-4">
+          {isSigningUp ? 'Create Account' : 'Welcome to MEP-Dash'}
+        </h1>
+        <p className="text-center text-neutral-medium mb-6">
+          {isSigningUp ? 'Fill in your details to get started.' : 'Please sign in to continue.'}
+        </p>
+        <form onSubmit={isSigningUp ? handleSignup : handleLogin} className="space-y-4">
+          {isSigningUp && (
             <div>
-              <label className="text-sm font-medium text-neutral-medium" htmlFor="fullName">Full Name</label>
+              <label htmlFor="fullName" className="block text-sm font-medium text-neutral-medium">
+                Full Name
+              </label>
               <input
                 id="fullName"
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
                 required
               />
             </div>
           )}
           <div>
-            <label className="text-sm font-medium text-neutral-medium" htmlFor="email">Email</label>
+            <label htmlFor="email" className="block text-sm font-medium text-neutral-medium">
+              Email Address
+            </label>
             <input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
               required
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-neutral-medium" htmlFor="password">Password</label>
+            <label htmlFor="password" className="block text-sm font-medium text-neutral-medium">
+              Password
+            </label>
             <input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-primary focus:border-brand-primary"
               required
+              minLength={6}
             />
           </div>
+          {error && <p className="text-sm text-red-600 bg-red-100 p-2 rounded-md">{error}</p>}
+          {message && <p className="text-sm text-green-600 bg-green-100 p-2 rounded-md">{message}</p>}
           <button
             type="submit"
             disabled={loading}
             className="w-full bg-brand-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-50"
           >
-            {loading ? 'Processing...' : (isSignUp ? 'Sign Up' : 'Sign In')}
+            {loading ? 'Processing...' : (isSigningUp ? 'Sign Up' : 'Sign In')}
           </button>
         </form>
+        <div className="mt-6 text-center">
+          <button
+            onClick={() => {
+              setIsSigningUp(!isSigningUp);
+              setError('');
+              setMessage('');
+            }}
+            className="text-sm text-brand-primary hover:underline"
+          >
+            {isSigningUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+          </button>
+        </div>
       </div>
     </div>
   );
