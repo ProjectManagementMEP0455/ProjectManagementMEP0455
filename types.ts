@@ -96,6 +96,7 @@ export interface Request {
     review_notes: string | null;
     linked_expense_id: number | null;
     requester?: { full_name: string };
+    document_url: string | null;
 }
 
 export interface ProgressPhoto {
@@ -107,6 +108,13 @@ export interface ProgressPhoto {
     caption: string | null;
     photo_date: string;
     uploader?: { full_name: string };
+}
+
+export interface Material {
+    id: number;
+    created_at: string;
+    name: string;
+    unit: string | null;
 }
 
 export interface Project {
@@ -285,6 +293,11 @@ export type Database = {
         Row: ProgressPhoto;
         Insert: Omit<ProgressPhoto, 'id' | 'created_at'>;
         Update: Partial<Omit<ProgressPhoto, 'id' | 'created_at'>>;
+      };
+      materials_master: {
+        Row: Material;
+        Insert: Omit<Material, 'id' | 'created_at'>;
+        Update: Partial<Omit<Material, 'id' | 'created_at'>>;
       };
     };
     Views: {

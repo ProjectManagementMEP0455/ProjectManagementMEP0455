@@ -1,5 +1,5 @@
 import React, { useState, useEffect, FormEvent } from 'react';
-import { Project, Profile, UserRole, Request, Expense, Task, RequestStatus } from '../types';
+import { Project, Profile, UserRole, Request, Expense, Task, RequestStatus, Material } from '../types';
 import Card from './ui/Card';
 import { supabase } from '../lib/supabaseClient';
 
@@ -19,10 +19,13 @@ const statusColors: { [key in RequestStatus]: string } = {
 const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdateProject }) => {
     const [requests, setRequests] = useState<Request[]>([]);
     const [expenses, setExpenses] = useState<Expense[]>([]);
+    const [materials, setMaterials] = useState<Material[]>([]);
     const [loading, setLoading] = useState(true);
 
     const [newRequestDesc, setNewRequestDesc] = useState('');
     const [newRequestCost, setNewRequestCost] = useState('');
+    const [newRequestFile, setNewRequestFile] = useState<File | null>(null);
+    const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
 
     const [newExpenseDesc, setNewExpenseDesc] = useState('');
     const [newExpenseAmount, setNewExpenseAmount] = useState('');
@@ -37,21 +40,36 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
     const fetchData = async () => {
         setLoading(true);
         try {
-            const { data: reqData, error: reqError } = await supabase
+            const reqPromise = supabase
                 .from('requests')
                 .select('*, requester:profiles(full_name)')
                 .eq('project_id', project.id)
                 .order('created_at', { ascending: false });
-            if (reqError) throw reqError;
-            setRequests(reqData as any[]);
-
-            const { data: expData, error: expError } = await supabase
+            
+            const expPromise = supabase
                 .from('expenses')
                 .select('*, task:tasks(name), creator:profiles(full_name)')
                 .eq('project_id', project.id)
                 .order('expense_date', { ascending: false });
+            
+            const matPromise = supabase
+                .from('materials_master')
+                .select('*')
+                .order('name');
+
+            const [
+                { data: reqData, error: reqError }, 
+                { data: expData, error: expError },
+                { data: matData, error: matError }
+            ] = await Promise.all([reqPromise, expPromise, matPromise]);
+
+            if (reqError) throw reqError;
+            setRequests(reqData as any[]);
             if (expError) throw expError;
             setExpenses(expData as any[]);
+            if (matError) throw matError;
+            setMaterials(matData);
+
         } catch (error: any) {
             console.error("Error fetching finance data:", error);
             alert("Could not fetch financial data.");
@@ -67,6 +85,22 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
     const handleRequestSubmit = async (e: FormEvent) => {
         e.preventDefault();
         if (!newRequestDesc || !newRequestCost || !userProfile) return;
+        setIsSubmittingRequest(true);
+
+        let documentUrl: string | null = null;
+        if (newRequestFile) {
+            const fileExt = newRequestFile.name.split('.').pop();
+            const fileName = `req-${project.id}-${Date.now()}.${fileExt}`;
+            const { error: uploadError } = await supabase.storage.from('request-attachments').upload(fileName, newRequestFile);
+            if(uploadError) {
+                alert('Error uploading attachment: ' + uploadError.message);
+                setIsSubmittingRequest(false);
+                return;
+            }
+            const { data: urlData } = supabase.storage.from('request-attachments').getPublicUrl(fileName);
+            documentUrl = urlData.publicUrl;
+        }
+
         const { data, error } = await supabase
             .from('requests')
             .insert({
@@ -74,7 +108,8 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
                 requested_by: userProfile.id,
                 description: newRequestDesc,
                 estimated_cost: parseFloat(newRequestCost),
-                status: RequestStatus.Pending
+                status: RequestStatus.Pending,
+                document_url: documentUrl
             })
             .select('*, requester:profiles(full_name)')
             .single();
@@ -85,7 +120,10 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
             setRequests([data as any, ...requests]);
             setNewRequestDesc('');
             setNewRequestCost('');
+            setNewRequestFile(null);
+            (e.target as HTMLFormElement).reset();
         }
+        setIsSubmittingRequest(false);
     };
 
     const handleRequestUpdate = async (requestId: number, status: RequestStatus) => {
@@ -114,7 +152,7 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
 
         if (newExpenseFile) {
             const fileExt = newExpenseFile.name.split('.').pop();
-            const fileName = `${project.id}-${Date.now()}.${fileExt}`;
+            const fileName = `exp-${project.id}-${Date.now()}.${fileExt}`;
             const { error: uploadError } = await supabase.storage.from('invoices').upload(fileName, newExpenseFile);
 
             if (uploadError) {
@@ -155,6 +193,7 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
             setNewExpenseAmount('');
             setNewExpenseTaskId('');
             setNewExpenseFile(null);
+            (e.target as HTMLFormElement).reset();
         }
         setIsSubmittingExpense(false);
     };
@@ -170,13 +209,22 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
                         <h4 className="font-semibold">Create New Request</h4>
                         <div>
                             <label className="text-sm font-medium">Description</label>
-                            <input type="text" value={newRequestDesc} onChange={e => setNewRequestDesc(e.target.value)} required className="w-full form-input mt-1" placeholder="e.g., 50 bags of cement" />
+                            <input type="text" list="materials-list" value={newRequestDesc} onChange={e => setNewRequestDesc(e.target.value)} required className="w-full form-input mt-1" placeholder="e.g., 50 bags of cement" />
+                            <datalist id="materials-list">
+                                {materials.map(m => <option key={m.id} value={m.name} />)}
+                            </datalist>
                         </div>
                         <div>
                             <label className="text-sm font-medium">Estimated Cost (₹)</label>
                             <input type="number" value={newRequestCost} onChange={e => setNewRequestCost(e.target.value)} required className="w-full form-input mt-1" placeholder="25000" />
                         </div>
-                        <button type="submit" className="w-full bg-brand-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-brand-dark transition-colors">Submit Request</button>
+                         <div>
+                            <label className="text-sm font-medium">Attach Reference (Optional)</label>
+                            <input type="file" onChange={e => setNewRequestFile(e.target.files ? e.target.files[0] : null)} className="w-full text-sm mt-1"/>
+                         </div>
+                        <button type="submit" disabled={isSubmittingRequest} className="w-full bg-brand-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-50">
+                            {isSubmittingRequest ? "Submitting..." : "Submit Request"}
+                        </button>
                     </form>
                 )}
                 <div className="space-y-4 max-h-96 overflow-y-auto">
@@ -187,6 +235,7 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
                                     <p className="font-semibold">{req.description}</p>
                                     <p className="text-sm text-neutral-medium">By: {req.requester?.full_name || '...'} on {new Date(req.created_at).toLocaleDateString()}</p>
                                     <p className="text-sm text-neutral-dark font-bold">Est. Cost: ₹{req.estimated_cost.toLocaleString()}</p>
+                                     {req.document_url && <a href={req.document_url} target="_blank" rel="noopener noreferrer" className="text-sm text-brand-primary hover:underline font-semibold">View Attachment</a>}
                                 </div>
                                 <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusColors[req.status]}`}>{req.status}</span>
                             </div>
