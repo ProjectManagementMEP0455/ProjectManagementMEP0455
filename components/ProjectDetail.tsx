@@ -71,11 +71,11 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
             alert('Error updating task: ' + error.message);
         } else if (data) {
              // Refetch project data to get updated budget/spent totals from trigger
-            const { data: updatedProjectData } = await supabase.from('projects').select('*, tasks(*), teamMembers:project_team_members(profiles(*))').eq('id', project.id).single();
+            const { data: updatedProjectData } = await supabase.from('projects').select('*, tasks(*), project_team_members(*, profiles(*))').eq('id', project.id).single();
              if (updatedProjectData) {
                 const formattedProject = {
                     ...updatedProjectData,
-                    teamMembers: (updatedProjectData.teamMembers || []).map((ptm: any) => ptm.profiles).filter(Boolean),
+                    teamMembers: (updatedProjectData.project_team_members || []).map((ptm: any) => ptm.profiles).filter(Boolean),
                     tasks: updatedProjectData.tasks as Task[]
                 };
                 onProjectUpdate(formattedProject as Project);
