@@ -46,10 +46,22 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
         if (error) {
             alert('Error adding task: ' + error.message);
         } else if (data) {
-            // Refetch project data to get updated budget totals from trigger
-            const { data: updatedProjectData } = await supabase.from('projects').select('*, tasks(*)').eq('id', project.id).single();
-            if (updatedProjectData) {
-                onProjectUpdate({ ...project, tasks: updatedProjectData.tasks as Task[], budget: updatedProjectData.budget });
+            const { data: updatedProjects, error: refreshError } = await supabase
+                .from('projects')
+                .select('*, tasks(*), milestones(*), project_team_members(*, profile:profiles(*))')
+                .eq('id', project.id);
+            
+            if (refreshError) {
+                 alert('Error refreshing project data: ' + refreshError.message);
+            } else if (updatedProjects && updatedProjects.length > 0) {
+                const updatedProjectData = updatedProjects[0];
+                const formattedProject = {
+                    ...updatedProjectData,
+                    teamMembers: (updatedProjectData.project_team_members || []).map((ptm: any) => ptm.profile).filter(Boolean),
+                    tasks: updatedProjectData.tasks as Task[],
+                    milestones: updatedProjectData.milestones as Milestone[]
+                };
+                onProjectUpdate(formattedProject as Project);
             }
             setIsAddTaskModalOpen(false);
         }
@@ -71,13 +83,20 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
         if (error) {
             alert('Error updating task: ' + error.message);
         } else if (data) {
-             // Refetch project data to get updated budget/spent totals from trigger
-            const { data: updatedProjectData } = await supabase.from('projects').select('*, tasks(*), project_team_members(*, profile:profiles(*))').eq('id', project.id).single();
-             if (updatedProjectData) {
+            const { data: updatedProjects, error: refreshError } = await supabase
+                .from('projects')
+                .select('*, tasks(*), milestones(*), project_team_members(*, profile:profiles(*))')
+                .eq('id', project.id);
+            
+            if (refreshError) {
+                 alert('Error refreshing project data: ' + refreshError.message);
+            } else if (updatedProjects && updatedProjects.length > 0) {
+                const updatedProjectData = updatedProjects[0];
                 const formattedProject = {
                     ...updatedProjectData,
                     teamMembers: (updatedProjectData.project_team_members || []).map((ptm: any) => ptm.profile).filter(Boolean),
-                    tasks: updatedProjectData.tasks as Task[]
+                    tasks: updatedProjectData.tasks as Task[],
+                    milestones: updatedProjectData.milestones as Milestone[]
                 };
                 onProjectUpdate(formattedProject as Project);
             }

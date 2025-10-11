@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, FormEvent } from 'react';
-import { Project, Profile, UserRole, Request, Expense, Task, RequestStatus, Material } from '../types';
+// FIX: Import `Milestone` type from `../types` to resolve `Cannot find name 'Milestone'` error when casting the `milestones` property during project data refresh.
+import { Project, Profile, UserRole, Request, Expense, Task, RequestStatus, Material, Milestone } from '../types';
 import Card from './ui/Card';
 import { supabase } from '../lib/supabaseClient';
 
@@ -166,7 +167,7 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
             documentUrl = urlData.publicUrl;
         }
         
-        const { data, error } = await supabase.from('expenses').insert({
+        const { error } = await supabase.from('expenses').insert({
             project_id: project.id,
             task_id: parseInt(newExpenseTaskId),
             created_by: userProfile.id,
@@ -179,13 +180,20 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
         if (error) {
             alert("Error creating expense: " + error.message);
         } else {
-             // Refetch all project data to get updated spent totals from triggers
-            const { data: updatedProjectData } = await supabase.from('projects').select('*, tasks(*), project_team_members(*, profile:profiles(*))').eq('id', project.id).single();
-            if (updatedProjectData) {
+            const { data: updatedProjects, error: refreshError } = await supabase
+                .from('projects')
+                .select('*, tasks(*), milestones(*), project_team_members(*, profile:profiles(*))')
+                .eq('id', project.id);
+            
+            if (refreshError) {
+                 alert('Error refreshing project data: ' + refreshError.message);
+            } else if (updatedProjects && updatedProjects.length > 0) {
+                const updatedProjectData = updatedProjects[0];
                 const formattedProject = {
                     ...updatedProjectData,
                     teamMembers: (updatedProjectData.project_team_members || []).map((ptm: any) => ptm.profile).filter(Boolean),
-                    tasks: updatedProjectData.tasks as Task[]
+                    tasks: updatedProjectData.tasks as Task[],
+                    milestones: updatedProjectData.milestones as Milestone[]
                 };
                 onUpdateProject(formattedProject as Project);
             }
