@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, FormEvent } from 'react';
 import { Project, Profile, UserRole, Request, Expense, Task, RequestStatus, Material } from '../types';
 import Card from './ui/Card';
@@ -179,11 +180,11 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
             alert("Error creating expense: " + error.message);
         } else {
              // Refetch all project data to get updated spent totals from triggers
-            const { data: updatedProjectData } = await supabase.from('projects').select('*, tasks(*), project_team_members(*, profiles(*))').eq('id', project.id).single();
+            const { data: updatedProjectData } = await supabase.from('projects').select('*, tasks(*), project_team_members(*, profile:profiles(*))').eq('id', project.id).single();
             if (updatedProjectData) {
                 const formattedProject = {
                     ...updatedProjectData,
-                    teamMembers: (updatedProjectData.project_team_members || []).map((ptm: any) => ptm.profiles).filter(Boolean),
+                    teamMembers: (updatedProjectData.project_team_members || []).map((ptm: any) => ptm.profile).filter(Boolean),
                     tasks: updatedProjectData.tasks as Task[]
                 };
                 onUpdateProject(formattedProject as Project);

@@ -78,7 +78,7 @@ const App: React.FC = () => {
           *,
           tasks(*),
           milestones(*),
-          project_team_members(*, profiles(*))
+          project_team_members(*, profile:profiles(*))
         `)
         .order('created_at', { ascending: false });
         
@@ -86,7 +86,7 @@ const App: React.FC = () => {
 
       const formattedProjects = (projectsData || []).map((p: any) => {
         const teamMembers = (p.project_team_members || [])
-          .map((ptm: any) => ptm.profiles) // Use .profiles (plural, from table name)
+          .map((ptm: any) => ptm.profile) // Use .profile (singular, from alias)
           .filter(Boolean); // Filter out any null profiles from failed joins
 
         return {
