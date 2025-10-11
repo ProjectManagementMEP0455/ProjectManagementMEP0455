@@ -4,6 +4,7 @@ import Card from './ui/Card';
 import { supabase } from '../lib/supabaseClient';
 import Button from './ui/Button';
 import Input from './ui/Input';
+import Select from './ui/Select';
 
 interface FinanceViewProps {
     project: Project;
@@ -275,10 +276,10 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
                          </div>
                          <div>
                              <label className="text-sm font-medium">Link to Task</label>
-                             <select value={newExpenseTaskId} onChange={e => setNewExpenseTaskId(e.target.value)} required className="mt-1 block w-full bg-input border-border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-ring">
+                             <Select value={newExpenseTaskId} onChange={e => setNewExpenseTaskId(e.target.value)} required>
                                  <option value="">Select a task...</option>
                                  {project.tasks.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                             </select>
+                             </Select>
                          </div>
                           <div>
                             <label className="text-sm font-medium">Attach Invoice/Receipt (Optional)</label>

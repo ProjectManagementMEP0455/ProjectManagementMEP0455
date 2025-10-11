@@ -4,6 +4,7 @@ import Button from './ui/Button';
 import Input from './ui/Input';
 import Modal from './ui/Modal';
 import Textarea from './ui/Textarea';
+import Select from './ui/Select';
 
 interface EditTaskModalProps {
   isOpen: boolean;
@@ -95,16 +96,16 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onUpdate
           </div>
           <div>
             <label htmlFor="editTaskAssignee" className="block text-sm font-medium text-muted-foreground">Assignee</label>
-            <select id="editTaskAssignee" value={assigneeId || ''} onChange={(e) => setAssigneeId(e.target.value || null)} className="mt-1 block w-full bg-input border border-border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-ring">
+            <Select id="editTaskAssignee" value={assigneeId || ''} onChange={(e) => setAssigneeId(e.target.value || null)}>
               <option value="">Unassigned</option>
               {teamMembers.map(user => <option key={user.id} value={user.id}>{user.full_name}</option>)}
-            </select>
+            </Select>
           </div>
           <div>
             <label htmlFor="editTaskStatus" className="block text-sm font-medium text-muted-foreground">Status</label>
-            <select id="editTaskStatus" value={status} onChange={(e) => setStatus(e.target.value as TaskStatus)} className="mt-1 block w-full bg-input border border-border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-ring">
+            <Select id="editTaskStatus" value={status} onChange={(e) => setStatus(e.target.value as TaskStatus)}>
               {Object.values(TaskStatus).map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
+            </Select>
           </div>
           <div>
             <label htmlFor="editTaskPercent" className="block text-sm font-medium text-muted-foreground">Percent Complete: {percentComplete}%</label>

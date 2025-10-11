@@ -4,6 +4,7 @@ import Button from './ui/Button';
 import Input from './ui/Input';
 import Modal from './ui/Modal';
 import Textarea from './ui/Textarea';
+import Select from './ui/Select';
 
 type NewTaskData = Omit<Task, 'id' | 'created_at' | 'project_id' | 'spent_cost'>;
 
@@ -87,17 +88,16 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask,
         </div>
          <div>
             <label htmlFor="taskAssignee" className="block text-sm font-medium text-muted-foreground">Assignee</label>
-            <select
+            <Select
               id="taskAssignee"
               value={assigneeId || ''}
               onChange={(e) => setAssigneeId(e.target.value || null)}
-              className="mt-1 block w-full bg-input border border-border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <option value="">Unassigned</option>
               {teamMembers.map(user => (
                 <option key={user.id} value={user.id}>{user.full_name}</option>
               ))}
-            </select>
+            </Select>
           </div>
            {isManager && (
               <div>

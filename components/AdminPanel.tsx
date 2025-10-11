@@ -5,6 +5,7 @@ import Card from './ui/Card';
 import Avatar from './ui/Avatar';
 import Button from './ui/Button';
 import Input from './ui/Input';
+import Select from './ui/Select';
 
 interface AdminPanelProps {
     currentUserProfile: Profile | null;
@@ -143,11 +144,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentUserProfile, navigateTo 
                         </div>
                         <div>
                              <label htmlFor="role" className="block text-sm font-medium text-muted-foreground">Role</label>
-                             <select id="role" value={newRole} onChange={e => setNewRole(e.target.value as UserRole)} required className="mt-1 block w-full bg-input border-border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-ring">
+                             <Select id="role" value={newRole} onChange={e => setNewRole(e.target.value as UserRole)} required>
                                 {Object.values(UserRole).map(role => (
                                     <option key={role} value={role}>{role}</option>
                                 ))}
-                             </select>
+                             </Select>
                         </div>
                     </div>
                     <div className="flex justify-end pt-2">
@@ -185,16 +186,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentUserProfile, navigateTo 
                                         </div>
                                     </td>
                                     <td className="p-4">
-                                        <select
+                                        <Select
                                             value={profile.role || ''}
                                             onChange={(e) => handleRoleChange(profile.id, e.target.value as UserRole)}
-                                            className="w-full max-w-xs bg-input border-border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-ring"
+                                            className="w-full max-w-xs"
                                             disabled={profile.id === currentUserProfile?.id}
                                         >
                                             {Object.values(UserRole).map(role => (
                                                 <option key={role} value={role}>{role}</option>
                                             ))}
-                                        </select>
+                                        </Select>
                                         {profile.id === currentUserProfile?.id && <p className="text-xs text-muted-foreground mt-1">Cannot change your own role.</p>}
                                     </td>
                                 </tr>
