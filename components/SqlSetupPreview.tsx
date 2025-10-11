@@ -1,22 +1,22 @@
-
-
 import React, { useState } from 'react';
 
-const fullSqlScript = `
--- MEP-DASH: UNIVERSAL RESET & SETUP SCRIPT V3
+// FIX: The SQL script is now stored as a constant string within a React component.
+const sqlScript = `-- MEP-DASH: UNIVERSAL RESET & SETUP SCRIPT V4
 -- This script safely cleans up previous attempts and sets up the
--- entire database from scratch. It is safe to run multiple times.
+-- entire database from scratch for a multi-user, persistent application.
+-- It is safe to run multiple times.
 --
 -- INSTRUCTIONS:
 -- 1. In your Supabase Dashboard, go to Storage and create THREE new
 --    public buckets: 'invoices', 'progress-photos', and 'request-attachments'.
--- 2. Create the 5 demo users in the Auth section (or use the app's setup screen):
---    - admin@mep-dash.com, director@mep-dash.com, manager@mep-dash.com,
---      accountant@mep-dash.com, engineer@mep-dash.com
--- 3. Run this entire script once in the Supabase SQL Editor.
+-- 2. Run this entire script once in the Supabase SQL Editor.
+-- 3. After running, the application is ready. The first user to sign up
+--    will automatically be designated as the system Admin.
 ----------------------------------------------------------------
 
 -- PART 0: CLEANUP (Drop existing objects if they exist)
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
 DROP FUNCTION IF EXISTS public.is_admin(uuid) CASCADE;
 DROP FUNCTION IF EXISTS public.is_member_of_project(bigint, uuid) CASCADE;
 DROP FUNCTION IF EXISTS public.update_project_spent() CASCADE;
@@ -128,7 +128,43 @@ CREATE TABLE public.progress_photos (
 );
 
 
--- PART 2: TRIGGERS & HELPER FUNCTIONS
+-- PART 2: TRIGGERS & AUTOMATION
+
+-- Function to handle new user sign-ups
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+DECLARE
+  user_count integer;
+  assigned_role public.user_role;
+BEGIN
+  -- Check if any user exists in profiles table
+  SELECT count(*) INTO user_count FROM public.profiles;
+
+  -- If no users exist, this is the first user, make them an Admin
+  IF user_count = 0 THEN
+    assigned_role := 'Admin';
+  ELSE
+    -- Otherwise, assign a default role
+    assigned_role := 'Site Engineer / Technician';
+  END IF;
+
+  INSERT INTO public.profiles (id, full_name, avatar_url, role)
+  VALUES (
+    NEW.id,
+    NEW.raw_user_meta_data->>'full_name',
+    NEW.raw_user_meta_data->>'avatar_url',
+    assigned_role
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger to call the function when a new user is created in auth
+CREATE TRIGGER on_auth_user_created
+AFTER INSERT ON auth.users
+FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+
 -- Function to update a task's total spent cost from its expenses
 CREATE OR REPLACE FUNCTION public.update_task_spent_cost()
 RETURNS TRIGGER AS $$
@@ -247,109 +283,63 @@ CREATE POLICY "Admins can manage master materials list." ON public.materials_mas
 CREATE POLICY "Authenticated users can view materials." ON public.materials_master FOR SELECT USING (auth.role() = 'authenticated');
 
 
--- PART 4: PRE-FLIGHT CHECK & SAMPLE DATA INSERTION
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = 'admin@mep-dash.com') THEN
-    RAISE EXCEPTION 'SETUP FAILED: Demo user "admin@mep-dash.com" not found. Please create the demo users first.';
-  END IF;
-END $$;
-
--- Truncate tables to ensure a clean slate for sample data
-TRUNCATE public.profiles, public.projects, public.materials_master RESTART IDENTITY CASCADE;
-
-WITH demo_users AS (
-  SELECT id, email FROM auth.users
-  WHERE email IN ('admin@mep-dash.com', 'director@mep-dash.com', 'manager@mep-dash.com', 'accountant@mep-dash.com', 'engineer@mep-dash.com')
-),
-inserted_profiles AS (
-  INSERT INTO public.profiles (id, full_name, avatar_url, role)
-  SELECT
-    u.id,
-    CASE
-      WHEN u.email = 'admin@mep-dash.com' THEN 'Sam Admin'
-      WHEN u.email = 'director@mep-dash.com' THEN 'Alex Director'
-      WHEN u.email = 'manager@mep-dash.com' THEN 'Brianna Manager'
-      WHEN u.email = 'accountant@mep-dash.com' THEN 'Fiona Accountant'
-      WHEN u.email = 'engineer@mep-dash.com' THEN 'Charlie Engineer'
-    END,
-    'https://i.pravatar.cc/150?u=' || u.email,
-    CASE
-      WHEN u.email = 'admin@mep-dash.com' THEN 'Admin'::public.user_role
-      WHEN u.email = 'director@mep-dash.com' THEN 'Project Director'::public.user_role
-      WHEN u.email = 'manager@mep-dash.com' THEN 'Project Manager'::public.user_role
-      WHEN u.email = 'accountant@mep-dash.com' THEN 'Office Accountant'::public.user_role
-      WHEN u.email = 'engineer@mep-dash.com' THEN 'Site Engineer / Technician'::public.user_role
-    END
-  FROM demo_users u
-  ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name, avatar_url = EXCLUDED.avatar_url, role = EXCLUDED.role
-),
-inserted_materials AS (
-    INSERT INTO public.materials_master (name, unit)
-    VALUES
-        ('Portland Cement', '50kg Bag'),
-        ('10mm Rebar', 'Ton'),
-        ('PVC Conduit Pipe 25mm', 'Meter'),
-        ('Copper Wire 4 sq.mm', 'Coil')
-),
-inserted_projects AS (
-  INSERT INTO public.projects (name, description, start_date, end_date, status, created_by)
-  VALUES ('Corporate HQ HVAC Overhaul', 'Complete overhaul of the HVAC system for the 15-story downtown corporate headquarters.', '2024-05-01', '2024-12-20', 'Active', (SELECT id FROM demo_users WHERE email = 'director@mep-dash.com'))
-  RETURNING id, name
-),
-inserted_team_members AS (
-  INSERT INTO public.project_team_members (project_id, user_id)
-  VALUES
-    ((SELECT id FROM inserted_projects WHERE name = 'Corporate HQ HVAC Overhaul'), (SELECT id FROM demo_users WHERE email = 'director@mep-dash.com')),
-    ((SELECT id FROM inserted_projects WHERE name = 'Corporate HQ HVAC Overhaul'), (SELECT id FROM demo_users WHERE email = 'manager@mep-dash.com')),
-    ((SELECT id FROM inserted_projects WHERE name = 'Corporate HQ HVAC Overhaul'), (SELECT id FROM demo_users WHERE email = 'accountant@mep-dash.com')),
-    ((SELECT id FROM inserted_projects WHERE name = 'Corporate HQ HVAC Overhaul'), (SELECT id FROM demo_users WHERE email = 'engineer@mep-dash.com'))
-),
-inserted_tasks AS (
-  INSERT INTO public.tasks (name, description, status, start_date, due_date, assignee_id, project_id, percent_complete, budgeted_cost)
-  VALUES
-    ('Procure new chiller units', 'Submit PO and confirm delivery dates for two 500-ton chiller units.', 'Done', '2024-05-10', '2024-06-15', (SELECT id FROM demo_users WHERE email = 'manager@mep-dash.com'), (SELECT id FROM inserted_projects WHERE name = 'Corporate HQ HVAC Overhaul'), 100, 3500000),
-    ('Install rooftop chiller #1', 'Crane lift and installation of the first chiller unit on the main roof.', 'In Progress', '2024-08-15', '2024-09-01', (SELECT id FROM demo_users WHERE email = 'engineer@mep-dash.com'), (SELECT id FROM inserted_projects WHERE name = 'Corporate HQ HVAC Overhaul'), 50, 800000)
-  RETURNING id, name
-),
-inserted_expenses AS (
-    INSERT INTO public.expenses(task_id, project_id, description, amount, created_by, expense_date)
-    VALUES
-    ((SELECT id from inserted_tasks WHERE name = 'Procure new chiller units'), (SELECT id FROM inserted_projects WHERE name = 'Corporate HQ HVAC Overhaul'), 'Initial payment to Carrier Corp.', 1500000, (SELECT id from demo_users where email='accountant@mep-dash.com'), '2024-05-20'),
-    ((SELECT id from inserted_tasks WHERE name = 'Procure new chiller units'), (SELECT id FROM inserted_projects WHERE name = 'Corporate HQ HVAC Overhaul'), 'Final payment to Carrier Corp.', 1950000, (SELECT id from demo_users where email='accountant@mep-dash.com'), '2024-06-18')
-)
-INSERT INTO public.requests (project_id, requested_by, description, estimated_cost, status)
-VALUES
-  ((SELECT id FROM inserted_projects WHERE name = 'Corporate HQ HVAC Overhaul'), (SELECT id FROM demo_users WHERE email = 'engineer@mep-dash.com'), 'Need advance for crane rental deposit for chiller #1 lift.', 50000, 'Pending');
-
-SELECT 'SUCCESS: MEP-Dash database has been reset and set up successfully!' as status;
-`;
+-- PART 4: FINALIZATION
+SELECT 'SUCCESS: MEP-Dash database has been set up for multi-user mode!' as status;`;
 
 const SqlSetupPreview: React.FC = () => {
-    const [copyButtonText, setCopyButtonText] = useState('Copy Script');
+    const [copySuccess, setCopySuccess] = useState('');
 
-    const handleCopy = () => {
-        navigator.clipboard.writeText(fullSqlScript.trim());
-        setCopyButtonText('Copied!');
-        setTimeout(() => setCopyButtonText('Copy Script'), 2000);
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(sqlScript).then(() => {
+            setCopySuccess('Copied!');
+            setTimeout(() => setCopySuccess(''), 2000);
+        }, () => {
+            setCopySuccess('Failed to copy.');
+             setTimeout(() => setCopySuccess(''), 2000);
+        });
     };
 
+    const getSupabaseSqlEditorUrl = () => {
+        const supabaseUrl = localStorage.getItem('supabaseUrl');
+        if (!supabaseUrl) return null;
+        try {
+            const url = new URL(supabaseUrl);
+            const projectRef = url.hostname.split('.')[0];
+            if (!projectRef) return null;
+            return `https://app.supabase.com/project/${projectRef}/sql/new`;
+        } catch (e) {
+            console.error("Could not parse Supabase URL for SQL Editor link:", e);
+            return null;
+        }
+    };
+
+    const sqlEditorUrl = getSupabaseSqlEditorUrl();
+
     return (
-        <div className="mt-8 border-t pt-6">
-            <h2 className="text-xl font-bold text-center text-neutral-dark mb-4">Supabase SQL Setup Script</h2>
-            <p className="text-center text-neutral-medium mb-4 text-sm">
-                For first-time setup, run this entire script in your Supabase project's SQL Editor. Remember to create the storage buckets as mentioned in the script comments!
+        <div className="space-y-4">
+            <p className="text-sm text-neutral-medium">
+                Copy the full SQL script below and run it in your Supabase SQL Editor to create the necessary tables, functions, and security policies.
             </p>
-            <div className="relative bg-neutral-dark rounded-lg p-4">
-                <button
-                    onClick={handleCopy}
-                    className="absolute top-2 right-2 bg-brand-primary text-white font-semibold py-1 px-3 rounded-md hover:bg-brand-dark transition-colors text-sm"
+            {sqlEditorUrl && (
+                <a 
+                    href={sqlEditorUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-block bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
                 >
-                    {copyButtonText}
-                </button>
-                <pre className="text-white text-xs overflow-x-auto max-h-64">
-                    <code>{fullSqlScript.trim()}</code>
+                    Open Supabase SQL Editor
+                </a>
+            )}
+            <div className="relative">
+                <pre className="bg-gray-800 text-white p-4 rounded-md max-h-64 overflow-auto text-xs">
+                    <code>{sqlScript}</code>
                 </pre>
+                <button
+                    onClick={copyToClipboard}
+                    className="absolute top-2 right-2 bg-gray-600 hover:bg-gray-500 text-white font-semibold py-1 px-3 rounded-md text-sm"
+                >
+                    {copySuccess || 'Copy'}
+                </button>
             </div>
         </div>
     );
