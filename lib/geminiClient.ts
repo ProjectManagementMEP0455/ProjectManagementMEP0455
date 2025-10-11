@@ -11,5 +11,6 @@ if (!API_KEY) {
   );
 }
 
-// Initialize the client. If API_KEY is missing, API calls will fail gracefully.
-export const ai = new GoogleGenAI({ apiKey: API_KEY! });
+// If the API_KEY is not set, Gemini features will fail, but the app should not crash on startup.
+// We pass an empty string which is safer than 'undefined' for the constructor.
+export const ai = new GoogleGenAI({ apiKey: API_KEY || "" });
