@@ -39,7 +39,15 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
     const [newExpenseFile, setNewExpenseFile] = useState<File | null>(null);
     const [isSubmittingExpense, setIsSubmittingExpense] = useState(false);
 
-    const canCreateRequest = userProfile && [UserRole.ProjectManager, UserRole.SiteEngineerTechnician, UserRole.EngineerSupervisor, UserRole.AssistantProjectManager].includes(userProfile.role);
+    const canCreateRequest = userProfile && [
+        UserRole.Admin,
+        UserRole.ProjectDirector,
+        UserRole.ProjectManager, 
+        UserRole.SiteEngineerTechnician, 
+        UserRole.EngineerSupervisor, 
+        UserRole.AssistantProjectManager
+    ].includes(userProfile.role);
+    
     const canManageFinances = userProfile && [UserRole.OfficeAccountant, UserRole.Admin].includes(userProfile.role);
 
     const fetchData = async () => {
