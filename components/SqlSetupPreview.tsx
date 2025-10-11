@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Button from './ui/Button';
 
-const sqlScript = `-- MEP-DASH: UNIVERSAL RESET & SETUP SCRIPT V4
+const sqlScript = `-- MEP-DASH: UNIVERSAL RESET & SETUP SCRIPT V5
 -- This script safely cleans up previous attempts and sets up the
 -- entire database from scratch for a multi-user, persistent application.
 -- It is safe to run multiple times.
@@ -137,15 +137,20 @@ DECLARE
   user_count integer;
   assigned_role public.user_role;
 BEGIN
-  -- Check if any user exists in profiles table
-  SELECT count(*) INTO user_count FROM public.profiles;
+  -- Check for a role passed from an admin during creation via metadata
+  assigned_role := (NEW.raw_user_meta_data->>'role')::public.user_role;
 
-  -- If no users exist, this is the first user, make them an Admin
-  IF user_count = 0 THEN
-    assigned_role := 'Admin';
-  ELSE
-    -- Otherwise, assign a default role
-    assigned_role := 'Site Engineer / Technician';
+  -- If no role was passed (i.e., it's a public sign-up from the login page)
+  IF assigned_role IS NULL THEN
+    SELECT count(*) INTO user_count FROM public.profiles;
+    IF user_count = 0 THEN
+      -- This is the first user signing up, make them Admin
+      assigned_role := 'Admin';
+    ELSE
+      -- Subsequent sign-ups get a default role. This path is now unlikely
+      -- as public sign-up is disabled, but it's a safe default.
+      assigned_role := 'Site Engineer / Technician';
+    END IF;
   END IF;
 
   INSERT INTO public.profiles (id, full_name, avatar_url, role)

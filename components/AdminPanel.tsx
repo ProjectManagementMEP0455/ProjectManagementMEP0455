@@ -87,38 +87,26 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentUserProfile, navigateTo 
         setCreateError('');
         setCreateSuccess('');
 
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
             email: newEmail,
             password: newPassword,
             options: {
                 data: {
                     full_name: newFullName,
+                    role: newRole, // Pass the role directly to the DB trigger
                 }
             }
         });
 
-        if (signUpError) {
-            setCreateError(signUpError.message);
-            setIsCreating(false);
-            return;
-        }
-
-        if (signUpData.user) {
-            const { error: updateError } = await supabase
-                .from('profiles')
-                .update({ role: newRole })
-                .eq('id', signUpData.user.id);
-
-            if (updateError) {
-                setCreateError(`User created, but failed to set role: ${updateError.message}. Please set it manually.`);
-            } else {
-                setCreateSuccess(`Successfully created user ${newFullName}. A confirmation email has been sent to ${newEmail}.`);
-                setNewFullName('');
-                setNewEmail('');
-                setNewPassword('');
-                setNewRole(UserRole.SiteEngineerTechnician);
-                await fetchProfiles();
-            }
+        if (error) {
+            setCreateError(error.message);
+        } else if (data.user) {
+            setCreateSuccess(`Successfully created user ${newFullName}. A confirmation email has been sent to ${newEmail}.`);
+            setNewFullName('');
+            setNewEmail('');
+            setNewPassword('');
+            setNewRole(UserRole.SiteEngineerTechnician);
+            await fetchProfiles();
         } else {
              setCreateError("An unknown error occurred. The user may already exist or the sign-up process failed.");
         }
