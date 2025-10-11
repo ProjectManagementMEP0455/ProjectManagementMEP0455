@@ -101,6 +101,8 @@ export interface Request {
     linked_expense_id: number | null;
     requester?: { full_name: string };
     document_url: string | null;
+    quantity: number | null;
+    unit: string | null;
 }
 
 export interface ProgressPhoto {
@@ -289,9 +291,9 @@ export type Database = {
         Update: Partial<Omit<Expense, 'id' | 'created_at'>>;
       };
       requests: {
-        Row: Request;
-        Insert: Omit<Request, 'id' | 'created_at'>;
-        Update: Partial<Omit<Request, 'id' | 'created_at'>>;
+        Row: Omit<Request, 'requester'>;
+        Insert: Omit<Request, 'id' | 'created_at' | 'requester'>;
+        Update: Partial<Omit<Request, 'id' | 'created_at' | 'requester'>>;
       };
       progress_photos: {
         Row: ProgressPhoto;

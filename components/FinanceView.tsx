@@ -27,6 +27,8 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
 
     const [newRequestDesc, setNewRequestDesc] = useState('');
     const [newRequestCost, setNewRequestCost] = useState('');
+    const [newRequestQuantity, setNewRequestQuantity] = useState('');
+    const [newRequestUnit, setNewRequestUnit] = useState('');
     const [newRequestFile, setNewRequestFile] = useState<File | null>(null);
     const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
 
@@ -110,6 +112,8 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
                 requested_by: userProfile.id,
                 description: newRequestDesc,
                 estimated_cost: parseFloat(newRequestCost),
+                quantity: newRequestQuantity ? parseFloat(newRequestQuantity) : null,
+                unit: newRequestUnit || null,
                 status: RequestStatus.Pending,
                 document_url: documentUrl
             })
@@ -122,6 +126,8 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
             setRequests([data as any, ...requests]);
             setNewRequestDesc('');
             setNewRequestCost('');
+            setNewRequestQuantity('');
+            setNewRequestUnit('');
             setNewRequestFile(null);
             (e.target as HTMLFormElement).reset();
         }
@@ -228,6 +234,16 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
                                 {materials.map(m => <option key={m.id} value={m.name} />)}
                             </datalist>
                         </div>
+                        <div className="grid grid-cols-2 gap-4">
+                             <div>
+                                <label className="text-sm font-medium">Quantity</label>
+                                <Input type="number" value={newRequestQuantity} onChange={e => setNewRequestQuantity(e.target.value)} placeholder="e.g., 50"/>
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium">Unit (UOM)</label>
+                                <Input type="text" value={newRequestUnit} onChange={e => setNewRequestUnit(e.target.value)} placeholder="e.g., bags"/>
+                            </div>
+                        </div>
                         <div>
                             <label className="text-sm font-medium">Estimated Cost (₹)</label>
                             <Input type="number" value={newRequestCost} onChange={e => setNewRequestCost(e.target.value)} required placeholder="25000" />
@@ -247,6 +263,11 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
                             <div className="flex justify-between items-start">
                                 <div>
                                     <p className="font-semibold">{req.description}</p>
+                                    {req.quantity && (
+                                        <p className="text-sm text-primary font-bold">
+                                            Quantity: {req.quantity} {req.unit}
+                                        </p>
+                                    )}
                                     <p className="text-sm text-muted-foreground">By: {req.requester?.full_name || '...'} on {new Date(req.created_at).toLocaleDateString()}</p>
                                     <p className="text-sm text-foreground font-bold">Est. Cost: ₹{req.estimated_cost.toLocaleString()}</p>
                                      {req.document_url && <a href={req.document_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline font-semibold">View Attachment</a>}
