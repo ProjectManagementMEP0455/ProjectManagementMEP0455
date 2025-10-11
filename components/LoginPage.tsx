@@ -28,7 +28,7 @@ const LoginPage: React.FC = () => {
         }
       } catch (err) {
         console.error("Error checking for initial setup:", err);
-        setError("Could not connect to the database to check setup status. Please verify your Supabase credentials.");
+        setError("Could not connect to the database to check setup status. Please verify your Supabase credentials and run the latest SQL script.");
       } finally {
         setCheckingSetup(false);
       }
@@ -60,7 +60,7 @@ const LoginPage: React.FC = () => {
       if (signUpError) {
         setError(signUpError.message);
       } else {
-        setAuthMessage("Admin account creation initiated! Please check your email to confirm your account. This page will reload once you sign in.");
+        setAuthMessage("Admin account creation initiated! Please check your email to confirm your account. You will be able to sign in after confirming.");
       }
     } else { // Always sign in for subsequent uses
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
@@ -77,6 +77,45 @@ const LoginPage: React.FC = () => {
     </div>;
   }
 
+  const renderAuthForm = () => {
+    if (authMessage) {
+        return (
+             <div className="text-center">
+                <div className="mx-auto w-16 h-16 my-4">
+                     <svg className="text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <h2 className="text-xl font-semibold text-foreground">Check Your Email</h2>
+                <p className="text-muted-foreground mt-2">{authMessage}</p>
+            </div>
+        )
+    }
+
+    return (
+        <form onSubmit={handleAuthAction} className="space-y-4">
+            {isInitialSetup && (
+                <div>
+                    <label htmlFor="fullName" className="block text-sm font-medium text-muted-foreground">Full Name</label>
+                    <Input id="fullName" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+                </div>
+            )}
+            <div>
+                <label htmlFor="email" className="block text-sm font-medium text-muted-foreground">Email Address</label>
+                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </div>
+            <div>
+                <label htmlFor="password" className="block text-sm font-medium text-muted-foreground">Password</label>
+                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+            </div>
+
+            {error && <p className="text-sm text-red-400 bg-red-500/20 p-3 rounded-md text-center">{error}</p>}
+            
+            <Button type="submit" disabled={loading} variant="primary" className="w-full" icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12.75 15l3-3m0 0l-3-3m3 3h-7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}>
+                {loading ? (isInitialSetup ? 'Creating Account...' : 'Signing In...') : (isInitialSetup ? 'Create Admin Account' : 'Sign In')}
+            </Button>
+        </form>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="p-8 bg-card/50 backdrop-blur-lg border border-border rounded-lg shadow-2xl w-full max-w-md">
@@ -91,30 +130,7 @@ const LoginPage: React.FC = () => {
             <p className="text-center text-muted-foreground mb-8">Please sign in to continue.</p>
           </>
         )}
-
-        <form onSubmit={handleAuthAction} className="space-y-4">
-          {isInitialSetup && (
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-muted-foreground">Full Name</label>
-              <Input id="fullName" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
-            </div>
-          )}
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-muted-foreground">Email Address</label>
-            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-muted-foreground">Password</label>
-            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
-          </div>
-
-          {error && <p className="text-sm text-red-400 bg-red-500/20 p-3 rounded-md text-center">{error}</p>}
-          {authMessage && <p className="text-sm text-green-400 bg-green-500/20 p-3 rounded-md text-center">{authMessage}</p>}
-          
-          <Button type="submit" disabled={loading || !!authMessage} variant="primary" className="w-full" icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12.75 15l3-3m0 0l-3-3m3 3h-7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}>
-            {loading ? (isInitialSetup ? 'Creating Account...' : 'Signing In...') : (isInitialSetup ? 'Create Admin Account' : 'Sign In')}
-          </Button>
-        </form>
+        {renderAuthForm()}
       </div>
     </div>
   );

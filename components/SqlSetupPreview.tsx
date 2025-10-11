@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import Button from './ui/Button';
 
-const sqlScript = `-- MEP-DASH: UNIVERSAL RESET & SETUP SCRIPT V6
+const sqlScript = `-- MEP-DASH: UNIVERSAL RESET & SETUP SCRIPT V7
 -- This script safely cleans up previous attempts and sets up the
 -- entire database from scratch for a multi-user, persistent application.
--- It is safe to run multiple times. V6 fixes critical auth bugs.
+-- It is safe to run multiple times. V7 fixes critical auth bugs.
 --
 -- INSTRUCTIONS:
 -- 1. In your Supabase Dashboard, go to Storage and create THREE new
@@ -134,31 +134,25 @@ CREATE TABLE public.progress_photos (
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
-  assigned_role public.user_role;
   user_count integer;
 BEGIN
-  -- Check for a role passed from an admin during creation via metadata
-  assigned_role := (NEW.raw_user_meta_data->>'role')::public.user_role;
+  -- Count existing users in our profiles table.
+  SELECT count(*) INTO user_count FROM public.profiles;
 
-  -- If no role was passed (i.e., it's a public sign-up from the login page)
-  IF assigned_role IS NULL THEN
-    SELECT count(*) INTO user_count FROM public.profiles;
-    IF user_count = 0 THEN
-      -- This is the first user signing up, make them Admin
-      assigned_role := 'Admin';
-    ELSE
-      -- Subsequent public sign-ups are not allowed.
-      RAISE EXCEPTION 'Public sign-up is disabled. An administrator must create your account.';
+  -- If this is the first user signing up, make them an Admin.
+  IF user_count = 0 THEN
+    INSERT INTO public.profiles (id, full_name, avatar_url, role)
+    VALUES (NEW.id, NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'avatar_url', 'Admin');
+  ELSE
+    -- For subsequent users, they MUST be created by an admin (via Admin Panel),
+    -- which means a 'role' must be provided in the metadata.
+    -- This effectively disables public sign-ups after the first user.
+    IF (NEW.raw_user_meta_data->>'role') IS NULL THEN
+      RAISE EXCEPTION 'Public sign-up is disabled. Please ask an administrator to create your account.';
     END IF;
+    INSERT INTO public.profiles (id, full_name, avatar_url, role)
+    VALUES (NEW.id, NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'avatar_url', (NEW.raw_user_meta_data->>'role')::public.user_role);
   END IF;
-
-  INSERT INTO public.profiles (id, full_name, avatar_url, role)
-  VALUES (
-    NEW.id,
-    NEW.raw_user_meta_data->>'full_name',
-    NEW.raw_user_meta_data->>'avatar_url',
-    assigned_role
-  );
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -230,7 +224,10 @@ AFTER INSERT OR UPDATE OF budgeted_cost OR DELETE ON public.tasks
 FOR EACH ROW EXECUTE FUNCTION public.update_project_budget();
 
 
--- PART 3: RLS (Row Level Security)
+-- PART 3: RLS (Row Level Security) & PERMISSIONS
+-- Grant usage on the public schema to anon and authenticated roles
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+
 -- Helper function to check if a user is an admin
 CREATE OR REPLACE FUNCTION public.is_admin(u_id uuid)
 RETURNS boolean LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
