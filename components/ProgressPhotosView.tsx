@@ -130,7 +130,7 @@ const ProgressPhotosView: React.FC<ProgressPhotosViewProps> = ({ project, userPr
                         <label className="text-sm font-medium">Image File</label>
                         <Input type="file" accept="image/png, image/jpeg, image/gif" onChange={e => setPhotoFile(e.target.files ? e.target.files[0] : null)} required />
                     </div>
-                    <Button type="submit" disabled={isUploading} variant="primary" className="w-full">
+                    <Button type="submit" disabled={isUploading} variant="primary" className="w-full" icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>}>
                         {isUploading ? "Uploading..." : "Upload Photo"}
                     </Button>
                  </form>
@@ -161,7 +161,9 @@ const ProgressPhotosView: React.FC<ProgressPhotosViewProps> = ({ project, userPr
             {selectedPhoto && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-center items-center p-4" onClick={() => setSelectedPhoto(null)}>
                     <div className="bg-card border border-border rounded-lg p-4 max-w-4xl max-h-[90vh] relative shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <button onClick={() => setSelectedPhoto(null)} className="absolute -top-3 -right-3 bg-background border border-border rounded-full p-1 text-foreground hover:text-destructive z-10 w-8 h-8 flex items-center justify-center">&times;</button>
+                        <Button onClick={() => setSelectedPhoto(null)} variant="ghost" size="sm" className="absolute -top-3 -right-3 bg-background border border-border rounded-full p-1 text-foreground hover:text-destructive z-10 w-8 h-8 flex items-center justify-center" aria-label="Close image viewer">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </Button>
                         <img src={selectedPhoto.photo_url} alt={selectedPhoto.caption || 'Progress Photo'} className="max-w-full max-h-[75vh] object-contain rounded-md"/>
                         <div className="mt-4 text-center">
                             <p className="font-semibold">{selectedPhoto.caption}</p>

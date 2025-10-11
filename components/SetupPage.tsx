@@ -60,6 +60,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onConfigured }) => {
           type="submit"
           variant="primary"
           className="w-full"
+          icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>}
         >
           Save and Continue
         </Button>
@@ -79,6 +80,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onConfigured }) => {
         onClick={onConfigured}
         className="w-full mt-6"
         variant="primary"
+        icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068M15.75 21a9 9 0 10-9.213-9.213" /></svg>}
       >
         I have run the SQL script, finish setup!
       </Button>

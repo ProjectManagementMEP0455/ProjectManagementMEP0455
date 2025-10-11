@@ -106,8 +106,8 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask,
               </div>
           )}
         <div className="flex justify-end space-x-4 pt-4">
-          <Button type="button" onClick={onClose} variant="secondary">Cancel</Button>
-          <Button type="submit" variant="primary">Add Task</Button>
+          <Button type="button" onClick={onClose} variant="secondary" icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>}>Cancel</Button>
+          <Button type="submit" variant="primary" icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}>Add Task</Button>
         </div>
       </form>
     </Modal>
