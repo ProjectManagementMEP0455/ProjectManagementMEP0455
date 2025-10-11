@@ -31,14 +31,31 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onUpdate
     if (task) {
         setName(task.name);
         setDescription(task.description || '');
-        setAssigneeId(task.assignee_id);
+
+        const isManagerOrSupervisor = userProfile && [
+            UserRole.Admin,
+            UserRole.ProjectDirector,
+            UserRole.ProjectManager,
+            UserRole.AssistantProjectManager,
+            UserRole.EngineerSupervisor,
+        ].includes(userProfile.role);
+        
+        const isTeamMember = teamMembers.some(member => member.id === userProfile?.id);
+        
+        // Default to self if task is unassigned and user is a manager on the team
+        if (!task.assignee_id && isManagerOrSupervisor && isTeamMember) {
+            setAssigneeId(userProfile.id);
+        } else {
+            setAssigneeId(task.assignee_id);
+        }
+
         setStartDate(task.start_date?.split('T')[0] || '');
         setDueDate(task.due_date?.split('T')[0] || '');
         setStatus(task.status as TaskStatus);
         setPercentComplete(task.percent_complete || 0);
         setBudgetedCost(task.budgeted_cost || 0);
     }
-  }, [task, isOpen]);
+  }, [task, isOpen, userProfile, teamMembers]);
   
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();

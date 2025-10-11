@@ -31,12 +31,28 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAddTask,
       const today = new Date().toISOString().split('T')[0];
       setName('');
       setDescription('');
-      setAssigneeId(null);
+      
+      const isManagerOrSupervisor = userProfile && [
+          UserRole.Admin,
+          UserRole.ProjectDirector,
+          UserRole.ProjectManager,
+          UserRole.AssistantProjectManager,
+          UserRole.EngineerSupervisor,
+      ].includes(userProfile.role);
+
+      const isTeamMember = teamMembers.some(member => member.id === userProfile?.id);
+      
+      if (isManagerOrSupervisor && isTeamMember) {
+        setAssigneeId(userProfile.id);
+      } else {
+        setAssigneeId(null);
+      }
+
       setStartDate(today);
       setDueDate('');
       setBudgetedCost(0);
     }
-  }, [isOpen]);
+  }, [isOpen, userProfile, teamMembers]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
