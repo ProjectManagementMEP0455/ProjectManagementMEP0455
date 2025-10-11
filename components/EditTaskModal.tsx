@@ -1,4 +1,5 @@
 
+
 import React, { useState, FormEvent, useEffect } from 'react';
 import { Task, TaskStatus, Profile, UserRole } from '../types';
 
@@ -20,7 +21,6 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onUpdate
   const [status, setStatus] = useState<TaskStatus>(TaskStatus.ToDo);
   const [percentComplete, setPercentComplete] = useState(0);
   const [budgetedCost, setBudgetedCost] = useState(0);
-  const [proposedSpentCostInput, setProposedSpentCostInput] = useState(0);
 
   const isManager = userProfile && [UserRole.Admin, UserRole.ProjectDirector, UserRole.ProjectManager].includes(userProfile.role);
 
@@ -34,7 +34,6 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onUpdate
         setStatus(task.status as TaskStatus);
         setPercentComplete(task.percent_complete || 0);
         setBudgetedCost(task.budgeted_cost || 0);
-        setProposedSpentCostInput(0);
     }
   }, [task, isOpen]);
   
@@ -61,30 +60,9 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onUpdate
 
     if (isManager) {
         updatePayload.budgeted_cost = budgetedCost;
-    } else if (proposedSpentCostInput > 0 && !task.pending_approval) {
-        updatePayload.proposed_spent_cost = proposedSpentCostInput;
-        updatePayload.pending_approval = true;
     }
 
     onUpdateTask(task.id, updatePayload);
-    onClose();
-  };
-
-  const handleApprove = () => {
-    const newSpentCost = (task.spent_cost || 0) + (task.proposed_spent_cost || 0);
-    onUpdateTask(task.id, {
-        spent_cost: newSpentCost,
-        proposed_spent_cost: null,
-        pending_approval: false,
-    });
-    onClose();
-  };
-
-  const handleReject = () => {
-     onUpdateTask(task.id, {
-        proposed_spent_cost: null,
-        pending_approval: false,
-    });
     onClose();
   };
 
@@ -149,7 +127,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onUpdate
 
           {/* Budget and Cost Section */}
           <div className="border-t pt-6 mt-6 space-y-4">
-            <h3 className="text-lg font-semibold text-neutral-dark">Budget & Cost Management</h3>
+            <h3 className="text-lg font-semibold text-neutral-dark">Budget & Cost</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  <div>
                     <label htmlFor="taskBudget" className="block text-sm font-medium text-neutral-medium">Budgeted Cost (₹)</label>
@@ -160,27 +138,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onUpdate
                     <p className="mt-1 text-lg font-semibold p-2 bg-gray-100 rounded-md">₹{(task.spent_cost || 0).toLocaleString()}</p>
                 </div>
             </div>
-
-            {task.pending_approval && (
-                 <div className="p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 space-y-3">
-                    <p className="font-bold">Pending Approval</p>
-                    <p>A request to add <span className="font-bold text-lg">₹{(task.proposed_spent_cost || 0).toLocaleString()}</span> is awaiting review.</p>
-                    {isManager && (
-                        <div className="flex justify-end space-x-3">
-                            <button type="button" onClick={handleReject} className="px-4 py-2 text-sm font-medium text-white bg-status-red rounded-md hover:bg-red-700 transition-colors">Reject</button>
-                            <button type="button" onClick={handleApprove} className="px-4 py-2 text-sm font-medium text-white bg-status-green rounded-md hover:bg-green-700 transition-colors">Approve</button>
-                        </div>
-                    )}
-                </div>
-            )}
-            
-            {!isManager && !task.pending_approval && (
-                <div>
-                    <label htmlFor="proposeSpent" className="block text-sm font-medium text-neutral-medium">Submit Amount Spent (₹)</label>
-                    <input type="number" id="proposeSpent" value={proposedSpentCostInput} onChange={(e) => setProposedSpentCostInput(Number(e.target.value))} className="mt-1 block w-full form-input" min="0" placeholder="Enter amount to be approved"/>
-                    <p className="text-xs text-neutral-medium mt-1">This amount will be submitted for approval by a project manager.</p>
-                </div>
-            )}
+             <p className="text-xs text-neutral-medium mt-1">Total spent is automatically calculated from approved expenses. To add a new expense, please use the 'Finance' tab.</p>
           </div>
           
           <div className="flex justify-end space-x-4 pt-4 border-t">

@@ -5,6 +5,7 @@ const demoUsers = [
   { email: 'admin@mep-dash.com', password: 'password123', fullName: 'Sam Admin' },
   { email: 'director@mep-dash.com', password: 'password123', fullName: 'Alex Director' },
   { email: 'manager@mep-dash.com', password: 'password123', fullName: 'Brianna Manager' },
+  { email: 'accountant@mep-dash.com', password: 'password123', fullName: 'Fiona Accountant' },
   { email: 'engineer@mep-dash.com', password: 'password123', fullName: 'Charlie Engineer' },
 ];
 
@@ -130,7 +131,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onConfigured }) => {
     <>
       <h1 className="text-2xl font-bold text-center text-brand-primary mb-4">Step 2: Create Demo Users</h1>
       <p className="text-center text-neutral-medium mb-6">
-        Next, we need to create the four demo user accounts in your Supabase project.
+        Next, we need to create the demo user accounts in your Supabase project.
       </p>
       <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 my-4" role="alert">
         <p className="font-bold">Important Prerequisite</p>

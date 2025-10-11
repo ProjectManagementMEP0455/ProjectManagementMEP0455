@@ -1,4 +1,5 @@
 
+
 export enum UserRole {
   Admin = 'Admin',
   ProjectDirector = 'Project Director',
@@ -6,6 +7,7 @@ export enum UserRole {
   AssistantProjectManager = 'Assistant Project Manager',
   EngineerSupervisor = 'Engineer / Supervisor',
   SiteEngineerTechnician = 'Site Engineer / Technician',
+  OfficeAccountant = 'Office Accountant',
 }
 
 export interface Profile {
@@ -28,6 +30,13 @@ export enum TaskStatus {
   Done = 'Done',
 }
 
+export enum RequestStatus {
+  Pending = 'Pending',
+  Approved = 'Approved',
+  Rejected = 'Rejected',
+  Processed = 'Processed',
+}
+
 export interface Task {
   id: number;
   created_at: string;
@@ -42,8 +51,8 @@ export interface Task {
   assignee?: Profile | null; // Optional, for joined data
   budgeted_cost: number | null;
   spent_cost: number | null;
-  proposed_spent_cost: number | null;
-  pending_approval: boolean;
+  // FIX: Add missing optional property 'pending_approval' to the Task interface.
+  pending_approval?: boolean;
 }
 
 export interface Milestone {
@@ -59,6 +68,45 @@ export type MilestoneInsert = Omit<Milestone, 'id' | 'created_at' | 'completed'>
 
 export interface ProjectTeamMember {
   profile: Profile;
+}
+
+export interface Expense {
+    id: number;
+    created_at: string;
+    task_id: number;
+    project_id: number;
+    description: string;
+    amount: number;
+    created_by: string;
+    document_url: string | null;
+    expense_date: string;
+    task?: { name: string };
+    creator?: { full_name: string };
+}
+
+export interface Request {
+    id: number;
+    created_at: string;
+    project_id: number;
+    requested_by: string;
+    description: string;
+    estimated_cost: number;
+    status: RequestStatus;
+    reviewed_by: string | null;
+    review_notes: string | null;
+    linked_expense_id: number | null;
+    requester?: { full_name: string };
+}
+
+export interface ProgressPhoto {
+    id: number;
+    created_at: string;
+    project_id: number;
+    uploaded_by: string;
+    photo_url: string;
+    caption: string | null;
+    photo_date: string;
+    uploader?: { full_name: string };
 }
 
 export interface Project {
@@ -91,8 +139,6 @@ export type Database = {
     Tables: {
       profiles: {
         Row: Profile;
-        // FIX: Expanded Insert and Update types to include all possible fields,
-        // which resolves issues with Supabase client type inference.
         Insert: {
           id?: string;
           full_name?: string | null;
@@ -119,7 +165,6 @@ export type Database = {
           status: ProjectStatus;
           created_by: string;
         };
-        // FIX: Expanded Insert and Update types to include all possible fields from Row.
         Insert: {
           id?: number;
           created_at?: string;
@@ -159,10 +204,7 @@ export type Database = {
           percent_complete: number | null;
           budgeted_cost: number | null;
           spent_cost: number | null;
-          proposed_spent_cost: number | null;
-          pending_approval: boolean;
         };
-        // FIX: Expanded Insert and Update types to include all possible fields from Row.
         Insert: {
           id?: number;
           created_at?: string;
@@ -176,8 +218,6 @@ export type Database = {
           percent_complete?: number | null;
           budgeted_cost?: number | null;
           spent_cost?: number | null;
-          proposed_spent_cost?: number | null;
-          pending_approval?: boolean;
         };
         Update: {
           id?: number;
@@ -192,8 +232,6 @@ export type Database = {
           percent_complete?: number | null;
           budgeted_cost?: number | null;
           spent_cost?: number | null;
-          proposed_spent_cost?: number | null;
-          pending_approval?: boolean;
         };
       };
       milestones: {
@@ -205,7 +243,6 @@ export type Database = {
             project_id: number;
             completed: boolean;
         };
-        // FIX: Expanded Insert and Update types to include all possible fields from Row.
         Insert: {
             id?: number;
             created_at?: string;
@@ -233,6 +270,21 @@ export type Database = {
           user_id: string;
         };
         Update: {};
+      };
+      expenses: {
+        Row: Expense;
+        Insert: Omit<Expense, 'id' | 'created_at'>;
+        Update: Partial<Omit<Expense, 'id' | 'created_at'>>;
+      };
+      requests: {
+        Row: Request;
+        Insert: Omit<Request, 'id' | 'created_at'>;
+        Update: Partial<Omit<Request, 'id' | 'created_at'>>;
+      };
+      progress_photos: {
+        Row: ProgressPhoto;
+        Insert: Omit<ProgressPhoto, 'id' | 'created_at'>;
+        Update: Partial<Omit<ProgressPhoto, 'id' | 'created_at'>>;
       };
     };
     Views: {

@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-// FIX: Remove `Partial` from the import statement. It is a built-in TypeScript
-// utility type and does not need to be imported from the types file.
 import { Project, Task, Profile, Milestone, MilestoneInsert, UserRole } from '../types';
 import Card from './ui/Card';
 import Avatar from './ui/Avatar';
@@ -14,6 +12,8 @@ import RiskAnalysis from './RiskAnalysis';
 import ResourceView from './ResourceView';
 import ModelsView from './ModelsView';
 import BudgetView from './BudgetView';
+import FinanceView from './FinanceView';
+import ProgressPhotosView from './ProgressPhotosView';
 
 interface ProjectDetailProps {
   project: Project;
@@ -21,7 +21,7 @@ interface ProjectDetailProps {
   userProfile: Profile | null;
 }
 
-type Tab = 'tasks' | 'timeline' | 'milestones' | 'risks' | 'resources' | 'models' | 'budget';
+type Tab = 'tasks' | 'timeline' | 'milestones' | 'risks' | 'resources' | 'models' | 'budget' | 'finance' | 'photos';
 
 const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate, userProfile }) => {
     const [activeTab, setActiveTab] = useState<Tab>('tasks');
@@ -31,15 +31,13 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
 
     const teamMembers = project.teamMembers || [];
     
-    const handleAddTask = async (taskData: Omit<Task, 'id' | 'created_at' | 'project_id' | 'spent_cost' | 'proposed_spent_cost' | 'pending_approval'>) => {
+    const handleAddTask = async (taskData: Omit<Task, 'id' | 'created_at' | 'project_id' | 'spent_cost'>) => {
         const { data, error } = await supabase
             .from('tasks')
             .insert([{ 
                 ...taskData, 
                 project_id: project.id,
                 spent_cost: 0,
-                proposed_spent_cost: null,
-                pending_approval: false,
             }])
             .select()
             .single();
@@ -73,9 +71,14 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
             alert('Error updating task: ' + error.message);
         } else if (data) {
              // Refetch project data to get updated budget/spent totals from trigger
-            const { data: updatedProjectData } = await supabase.from('projects').select('*, tasks(*)').eq('id', project.id).single();
+            const { data: updatedProjectData } = await supabase.from('projects').select('*, tasks(*), teamMembers:project_team_members(profiles(*))').eq('id', project.id).single();
              if (updatedProjectData) {
-                onProjectUpdate({ ...project, tasks: updatedProjectData.tasks as Task[], budget: updatedProjectData.budget, spent: updatedProjectData.spent });
+                const formattedProject = {
+                    ...updatedProjectData,
+                    teamMembers: (updatedProjectData.teamMembers || []).map((ptm: any) => ptm.profiles).filter(Boolean),
+                    tasks: updatedProjectData.tasks as Task[]
+                };
+                onProjectUpdate(formattedProject as Project);
             }
             setIsEditTaskModalOpen(false);
             setSelectedTask(null);
@@ -108,6 +111,10 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
                             onAddTask={() => setIsAddTaskModalOpen(true)}
                             userProfile={userProfile}
                         />;
+            case 'finance':
+                return <FinanceView project={project} userProfile={userProfile} onUpdateProject={onProjectUpdate} />;
+            case 'photos':
+                return <ProgressPhotosView project={project} userProfile={userProfile} />;
             case 'timeline':
                 return <GanttChart 
                             tasks={project.tasks}
@@ -142,6 +149,8 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
 
     const tabs: {id: Tab, label: string}[] = [
         { id: 'tasks', label: 'Tasks' },
+        { id: 'finance', label: 'Finance' },
+        { id: 'photos', label: 'Progress Photos' },
         { id: 'budget', label: 'Budget' },
         { id: 'timeline', label: 'Timeline' },
         { id: 'milestones', label: 'Milestones' },

@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -6,6 +7,7 @@ const demoUsers = [
   { role: 'Admin', email: 'admin@mep-dash.com', password: 'password123' },
   { role: 'Project Director', email: 'director@mep-dash.com', password: 'password123' },
   { role: 'Project Manager', email: 'manager@mep-dash.com', password: 'password123' },
+  { role: 'Office Accountant', email: 'accountant@mep-dash.com', password: 'password123' },
   { role: 'Site Engineer', email: 'engineer@mep-dash.com', password: 'password123' },
 ];
 

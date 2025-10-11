@@ -1,8 +1,9 @@
 
+
 import React, { useState, FormEvent, useEffect } from 'react';
 import { Task, TaskStatus, Profile, UserRole } from '../types';
 
-type NewTaskData = Omit<Task, 'id' | 'created_at' | 'project_id' | 'spent_cost' | 'proposed_spent_cost' | 'pending_approval'>;
+type NewTaskData = Omit<Task, 'id' | 'created_at' | 'project_id' | 'spent_cost'>;
 
 interface AddTaskModalProps {
   isOpen: boolean;
