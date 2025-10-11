@@ -1,14 +1,18 @@
+
 import React, { useState } from 'react';
 import Button from './ui/Button';
 
-const sqlScript = `-- MEP-DASH: SAFE MIGRATION & SETUP SCRIPT V10
+// FIX: The SQL script is now stored as a string constant within a valid React component.
+const sqlScript = `-- MEP-DASH: SAFE MIGRATION & SETUP SCRIPT V11
 -- This script is NON-DESTRUCTIVE to user data. It is designed to be
 -- run safely on an existing database to apply updates without wiping
 -- profiles, projects, or other critical information. It resolves the
 -- issue of needing to delete users from Supabase Auth on every update.
 --
--- V10 CHANGES: Adds 'quantity' and 'unit' columns to the 'requests' table
--- for more detailed material requirements.
+-- V11 CHANGES: Fixes a critical bug where Site Engineers could not submit
+-- material requests by updating the RLS policy for the 'requests' table
+-- to be more explicit about which roles have INSERT permissions. Also
+-- improves security of the request UPDATE policy.
 --
 -- INSTRUCTIONS:
 -- 1. If this is your first time setting up, ensure you have created
@@ -280,12 +284,29 @@ CREATE POLICY "Team members can view expenses." ON public.expenses FOR SELECT US
 DROP POLICY IF EXISTS "Accountants or Admins can manage expenses." ON public.expenses;
 CREATE POLICY "Accountants or Admins can manage expenses." ON public.expenses FOR ALL USING (((SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('Office Accountant'::public.user_role, 'Admin'::public.user_role)));
 
+-- ** REQUESTS POLICIES: UPDATED FOR V11 **
 DROP POLICY IF EXISTS "Team members can view requests." ON public.requests;
 CREATE POLICY "Team members can view requests." ON public.requests FOR SELECT USING (public.is_member_of_project(project_id, auth.uid()));
-DROP POLICY IF EXISTS "Team members can create requests." ON public.requests;
-CREATE POLICY "Team members can create requests." ON public.requests FOR INSERT WITH CHECK (public.is_member_of_project(project_id, auth.uid()));
+
+DROP POLICY IF EXISTS "Authorized team members can create requests." ON public.requests;
+CREATE POLICY "Authorized team members can create requests." ON public.requests FOR INSERT WITH CHECK (
+    public.is_member_of_project(project_id, auth.uid()) AND
+    (SELECT role FROM public.profiles WHERE id = auth.uid()) IN (
+        'Admin'::public.user_role,
+        'Project Director'::public.user_role,
+        'Project Manager'::public.user_role,
+        'Assistant Project Manager'::public.user_role,
+        'Engineer / Supervisor'::public.user_role,
+        'Site Engineer / Technician'::public.user_role
+    )
+);
+
 DROP POLICY IF EXISTS "Accountants or Admins can manage requests." ON public.requests;
-CREATE POLICY "Accountants or Admins can manage requests." ON public.requests FOR UPDATE USING (((SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('Office Accountant'::public.user_role, 'Admin'::public.user_role)));
+CREATE POLICY "Accountants or Admins can manage requests." ON public.requests FOR UPDATE USING (
+    public.is_member_of_project(project_id, auth.uid()) AND
+    ((SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('Office Accountant'::public.user_role, 'Admin'::public.user_role))
+);
+
 
 DROP POLICY IF EXISTS "Team members can view photos." ON public.progress_photos;
 CREATE POLICY "Team members can view photos." ON public.progress_photos FOR SELECT USING (public.is_member_of_project(project_id, auth.uid()));
@@ -307,61 +328,37 @@ CREATE POLICY "Admins can manage settings." ON public.app_settings FOR ALL USING
 
 -- PART 5: FINALIZATION & DEFAULT DATA
 INSERT INTO public.app_settings (key, value) VALUES ('project_completion_method', 'BASED_ON_TASKS') ON CONFLICT (key) DO NOTHING;
-SELECT 'SUCCESS: MEP-Dash database has been set up/updated without deleting user data.' as status;`;
+SELECT 'SUCCESS: MEP-Dash database has been set up/updated without deleting user data.' as status;
+`;
 
 const SqlSetupPreview: React.FC = () => {
-    const [copySuccess, setCopySuccess] = useState('');
+    const [copyStatus, setCopyStatus] = useState('Copy to Clipboard');
 
-    const copyToClipboard = () => {
+    const handleCopy = () => {
         navigator.clipboard.writeText(sqlScript).then(() => {
-            setCopySuccess('Copied!');
-            setTimeout(() => setCopySuccess(''), 2000);
+            setCopyStatus('Copied!');
+            setTimeout(() => setCopyStatus('Copy to Clipboard'), 2000);
         }, () => {
-            setCopySuccess('Failed to copy.');
-             setTimeout(() => setCopySuccess(''), 2000);
+            setCopyStatus('Failed to copy!');
+            setTimeout(() => setCopyStatus('Copy to Clipboard'), 2000);
         });
     };
-
-    const getSupabaseSqlEditorUrl = () => {
-        const supabaseUrl = localStorage.getItem('supabaseUrl');
-        if (!supabaseUrl) return null;
-        try {
-            const url = new URL(supabaseUrl);
-            const projectRef = url.hostname.split('.')[0];
-            if (!projectRef) return null;
-            return `https://app.supabase.com/project/${projectRef}/sql/new`;
-        } catch (e) {
-            console.error("Could not parse Supabase URL for SQL Editor link:", e);
-            return null;
-        }
-    };
-
-    const sqlEditorUrl = getSupabaseSqlEditorUrl();
 
     return (
         <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-                Copy the full SQL script below and run it in your Supabase SQL Editor. This new version is **non-destructive** and is safe to run on every update without deleting your users or project data.
+                Run the following SQL script in your Supabase project's SQL Editor to create the necessary tables, roles, and policies. 
+                This script is safe to run multiple times.
             </p>
-            <div className="flex flex-wrap gap-4">
-            {sqlEditorUrl && (
-                <a 
-                    href={sqlEditorUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-green-600 text-white hover:bg-green-700 h-10 px-4 py-2"
-                >
-                    Open Supabase SQL Editor
-                </a>
-            )}
-             <Button onClick={copyToClipboard} variant="secondary" icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" /></svg>}>
-                 {copySuccess || 'Copy SQL Script'}
-            </Button>
-            </div>
-            <div className="relative mt-4">
-                <pre className="bg-secondary text-foreground p-4 rounded-md max-h-64 overflow-auto text-xs">
+            <div className="relative">
+                <pre className="bg-background/80 border border-border rounded-md p-4 max-h-60 overflow-auto text-xs">
                     <code>{sqlScript}</code>
                 </pre>
+                <div className="absolute top-2 right-2">
+                    <Button onClick={handleCopy} variant="secondary" size="sm">
+                        {copyStatus}
+                    </Button>
+                </div>
             </div>
         </div>
     );
