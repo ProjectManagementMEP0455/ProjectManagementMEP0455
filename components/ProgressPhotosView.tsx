@@ -149,7 +149,8 @@ const ProgressPhotosView: React.FC<ProgressPhotosViewProps> = ({ project, userPr
                            <div key={date}>
                                <h4 className="font-bold text-lg text-foreground pb-2 border-b border-border mb-4">{date}</h4>
                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                                   {datePhotos.map(photo => (
+                                   {/* FIX: Cast datePhotos to ProgressPhoto[] to resolve 'unknown' type error. */}
+                                   {(datePhotos as ProgressPhoto[]).map(photo => (
                                        <div key={photo.id} className="cursor-pointer group" onClick={() => setSelectedPhoto(photo)}>
                                            <img src={photo.photo_url} alt={photo.caption || 'Progress Photo'} className="w-full h-32 object-cover rounded-lg shadow-md group-hover:shadow-xl transition-shadow border border-border"/>
                                            <p className="text-xs text-muted-foreground mt-1 truncate">{photo.caption}</p>
