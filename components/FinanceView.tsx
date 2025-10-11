@@ -45,13 +45,13 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
         try {
             const reqPromise = supabase
                 .from('requests')
-                .select('*, requester:requested_by(full_name)')
+                .select('*, requester:profiles!requested_by(full_name), reviewer:profiles!reviewed_by(full_name)')
                 .eq('project_id', project.id)
                 .order('created_at', { ascending: false });
             
             const expPromise = supabase
                 .from('expenses')
-                .select('*, task:task_id(name), creator:created_by(full_name)')
+                .select('*, task:tasks!task_id(name), creator:profiles!created_by(full_name)')
                 .eq('project_id', project.id)
                 .order('expense_date', { ascending: false });
             
@@ -113,7 +113,7 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
                 status: RequestStatus.Pending,
                 document_url: documentUrl
             })
-            .select('*, requester:requested_by(full_name)')
+            .select('*, requester:profiles!requested_by(full_name), reviewer:profiles!reviewed_by(full_name)')
             .single();
 
         if (error) {
@@ -133,7 +133,7 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
             .from('requests')
             .update({ status: status, reviewed_by: userProfile?.id })
             .eq('id', requestId)
-            .select('*, requester:requested_by(full_name)')
+            .select('*, requester:profiles!requested_by(full_name), reviewer:profiles!reviewed_by(full_name)')
             .single();
         if (error) {
             alert('Error updating request: ' + error.message)
