@@ -74,7 +74,6 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
 
         } catch (error: any) {
             console.error("Error fetching finance data:", error);
-            alert("Could not fetch financial data: " + error.message);
         } finally {
             setLoading(false);
         }
@@ -182,11 +181,16 @@ const FinanceView: React.FC<FinanceViewProps> = ({ project, userProfile, onUpdat
         } else {
             const { data: updatedProjects, error: refreshError } = await supabase
                 .from('projects')
-                .select('*, tasks(*), milestones(*), team_member_joins:project_team_members(*, profile:profiles(*))')
+                .select(`
+                    *,
+                    tasks(*, assignee:profiles!assignee_id(*)),
+                    milestones(*),
+                    team_member_joins:project_team_members(*, profile:profiles!user_id(*))
+                `)
                 .eq('id', project.id);
             
             if (refreshError) {
-                 console.error('Error refreshing project data: ' + refreshError.message);
+                 console.error('Error refreshing project data:', refreshError);
             } else if (updatedProjects && updatedProjects.length > 0) {
                 const updatedProjectData = updatedProjects[0];
                 const formattedProject = {

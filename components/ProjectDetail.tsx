@@ -31,6 +31,31 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
 
     const teamMembers = project.teamMembers || [];
     
+    const refetchProject = async () => {
+        const { data: updatedProjects, error: refreshError } = await supabase
+            .from('projects')
+            .select(`
+                *,
+                tasks(*, assignee:profiles!assignee_id(*)),
+                milestones(*),
+                team_member_joins:project_team_members(*, profile:profiles!user_id(*))
+            `)
+            .eq('id', project.id);
+        
+        if (refreshError) {
+             console.error('Error refreshing project data:', refreshError);
+        } else if (updatedProjects && updatedProjects.length > 0) {
+            const updatedProjectData = updatedProjects[0];
+            const formattedProject = {
+                ...updatedProjectData,
+                teamMembers: (updatedProjectData.team_member_joins || []).map((ptm: any) => ptm.profile).filter(Boolean),
+                tasks: updatedProjectData.tasks as Task[],
+                milestones: updatedProjectData.milestones as Milestone[]
+            };
+            onProjectUpdate(formattedProject as Project);
+        }
+    };
+
     const handleAddTask = async (taskData: Omit<Task, 'id' | 'created_at' | 'project_id' | 'spent_cost'>) => {
         const { data, error } = await supabase
             .from('tasks')
@@ -45,23 +70,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
         if (error) {
             console.error('Error adding task: ' + error.message);
         } else if (data) {
-            const { data: updatedProjects, error: refreshError } = await supabase
-                .from('projects')
-                .select('*, tasks(*), milestones(*), team_member_joins:project_team_members(*, profile:profiles(*))')
-                .eq('id', project.id);
-            
-            if (refreshError) {
-                 console.error('Error refreshing project data: ' + refreshError.message);
-            } else if (updatedProjects && updatedProjects.length > 0) {
-                const updatedProjectData = updatedProjects[0];
-                const formattedProject = {
-                    ...updatedProjectData,
-                    teamMembers: (updatedProjectData.team_member_joins || []).map((ptm: any) => ptm.profile).filter(Boolean),
-                    tasks: updatedProjectData.tasks as Task[],
-                    milestones: updatedProjectData.milestones as Milestone[]
-                };
-                onProjectUpdate(formattedProject as Project);
-            }
+            await refetchProject();
             setIsAddTaskModalOpen(false);
         }
     };
@@ -82,23 +91,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
         if (error) {
             console.error('Error updating task: ' + error.message);
         } else if (data) {
-            const { data: updatedProjects, error: refreshError } = await supabase
-                .from('projects')
-                .select('*, tasks(*), milestones(*), team_member_joins:project_team_members(*, profile:profiles(*))')
-                .eq('id', project.id);
-            
-            if (refreshError) {
-                 console.error('Error refreshing project data: ' + refreshError.message);
-            } else if (updatedProjects && updatedProjects.length > 0) {
-                const updatedProjectData = updatedProjects[0];
-                const formattedProject = {
-                    ...updatedProjectData,
-                    teamMembers: (updatedProjectData.team_member_joins || []).map((ptm: any) => ptm.profile).filter(Boolean),
-                    tasks: updatedProjectData.tasks as Task[],
-                    milestones: updatedProjectData.milestones as Milestone[]
-                };
-                onProjectUpdate(formattedProject as Project);
-            }
+            await refetchProject();
             setIsEditTaskModalOpen(false);
             setSelectedTask(null);
         }

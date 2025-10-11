@@ -73,12 +73,7 @@ const KanbanColumn: React.FC<{
 const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskUpdate, onEditTask, onAddTask, userProfile }) => {
   const columns: TaskStatus[] = [TaskStatus.ToDo, TaskStatus.InProgress, TaskStatus.Done];
   
-  const tasksWithAssignee = tasks.map(task => {
-    const assignee = null;
-    return {...task, assignee};
-  });
-
-  const tasksByStatus = (status: TaskStatus) => tasksWithAssignee.filter(task => task.status === status);
+  const tasksByStatus = (status: TaskStatus) => tasks.filter(task => task.status === status);
   
   const canAddTask = userProfile?.role !== UserRole.SiteEngineerTechnician;
 

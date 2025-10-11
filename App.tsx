@@ -114,9 +114,9 @@ const AppContent: React.FC = () => {
         .from('projects')
         .select(`
           *,
-          tasks(*),
+          tasks(*, assignee:profiles!assignee_id(*)),
           milestones(*),
-          team_member_joins:project_team_members(*, profile:profiles(*))
+          team_member_joins:project_team_members(*, profile:profiles!user_id(*))
         `)
         .order('created_at', { ascending: false });
         
@@ -130,7 +130,7 @@ const AppContent: React.FC = () => {
       setProjects(formattedProjects);
 
     } catch (error: any) {
-      console.error("Error fetching data:", error.message);
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
