@@ -1,5 +1,4 @@
 
-
 export enum UserRole {
   Admin = 'Admin',
   ProjectDirector = 'Project Director',
@@ -57,7 +56,6 @@ export interface Task {
   assignee?: Profile | null; // Optional, for joined data
   budgeted_cost: number | null;
   spent_cost: number | null;
-  // FIX: Add missing optional property 'pending_approval' to the Task interface.
   pending_approval?: boolean;
 }
 

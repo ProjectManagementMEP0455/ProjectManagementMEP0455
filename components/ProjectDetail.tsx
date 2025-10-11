@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Project, Task, Profile, Milestone, MilestoneInsert, UserRole } from '../types';
 import Card from './ui/Card';
 import Avatar from './ui/Avatar';
@@ -8,13 +9,11 @@ import MilestonesView from './MilestonesView';
 import AddTaskModal from './AddTaskModal';
 import EditTaskModal from './EditTaskModal';
 import { supabase } from '../lib/supabaseClient';
-import RiskAnalysis from './RiskAnalysis';
-import ResourceView from './ResourceView';
-import ModelsView from './ModelsView';
 import BudgetView from './BudgetView';
 import FinanceView from './FinanceView';
 import ProgressPhotosView from './ProgressPhotosView';
 import { useAppSettings } from '../App';
+import Button from './ui/Button';
 
 interface ProjectDetailProps {
   project: Project;
@@ -22,7 +21,7 @@ interface ProjectDetailProps {
   userProfile: Profile | null;
 }
 
-type Tab = 'tasks' | 'timeline' | 'milestones' | 'risks' | 'resources' | 'models' | 'budget' | 'finance' | 'photos';
+type Tab = 'tasks' | 'team' | 'timeline' | 'milestones' | 'budget' | 'finance' | 'photos';
 
 const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate, userProfile }) => {
     const [activeTab, setActiveTab] = useState<Tab>('tasks');
@@ -31,7 +30,36 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const { calculateOverallProgress } = useAppSettings();
 
+    // State for Team Management
+    const [allUsers, setAllUsers] = useState<Profile[]>([]);
+    const [selectedTeamMemberIds, setSelectedTeamMemberIds] = useState<string[]>([]);
+    const [isTeamLoading, setIsTeamLoading] = useState(false);
+    const [isTeamSaving, setIsTeamSaving] = useState(false);
+
     const teamMembers = project.teamMembers || [];
+
+    useEffect(() => {
+        const fetchAllUsers = async () => {
+            setIsTeamLoading(true);
+            const { data, error } = await supabase.from('profiles').select('*');
+            if (error) {
+                console.error("Error fetching all users:", error);
+            } else {
+                setAllUsers(data || []);
+            }
+            setIsTeamLoading(false);
+        };
+
+        if (activeTab === 'team') {
+            fetchAllUsers();
+        }
+    }, [activeTab]);
+
+    useEffect(() => {
+        if (project.teamMembers) {
+            setSelectedTeamMemberIds(project.teamMembers.map(m => m.id));
+        }
+    }, [project.teamMembers]);
     
     const refetchProject = async () => {
         const { data: updatedProjects, error: refreshError } = await supabase
@@ -114,6 +142,43 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
             onProjectUpdate(updatedProject);
         }
     };
+    
+    const handleTeamUpdate = async () => {
+        setIsTeamSaving(true);
+        const { error: deleteError } = await supabase
+            .from('project_team_members')
+            .delete()
+            .eq('project_id', project.id);
+
+        if (deleteError) {
+            console.error("Error clearing team members:", deleteError);
+            alert("Failed to update team. Please try again.");
+            setIsTeamSaving(false);
+            return;
+        }
+
+        const newTeamMembers = selectedTeamMemberIds.map(userId => ({
+            project_id: project.id,
+            user_id: userId,
+        }));
+
+        if (newTeamMembers.length > 0) {
+            const { error: insertError } = await supabase
+                .from('project_team_members')
+                .insert(newTeamMembers);
+
+            if (insertError) {
+                console.error("Error inserting new team members:", insertError);
+                alert("Failed to update team. Please try again.");
+                setIsTeamSaving(false);
+                return;
+            }
+        }
+        
+        await refetchProject();
+        setIsTeamSaving(false);
+    };
+
 
     const renderTabContent = () => {
         switch (activeTab) {
@@ -125,6 +190,56 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
                             onAddTask={() => setIsAddTaskModalOpen(true)}
                             userProfile={userProfile}
                         />;
+            case 'team':
+                const canManageTeam = userProfile && [
+                    UserRole.Admin,
+                    UserRole.ProjectDirector,
+                    UserRole.ProjectManager,
+                ].includes(userProfile.role);
+
+                return (
+                    <Card className="p-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xl font-semibold text-foreground">Manage Team Members</h3>
+                            {canManageTeam && (
+                                <Button onClick={handleTeamUpdate} disabled={isTeamSaving} variant="primary">
+                                    {isTeamSaving ? 'Saving...' : 'Save Changes'}
+                                </Button>
+                            )}
+                        </div>
+                        {isTeamLoading ? <p>Loading users...</p> : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto pr-2">
+                                {allUsers.map(user => (
+                                    <div key={user.id} className="flex items-center justify-between p-3 rounded-md border border-border hover:bg-muted">
+                                        <div className="flex items-center space-x-3">
+                                            <Avatar profile={user} size="md"/>
+                                            <div>
+                                                <p className="font-semibold">{user.full_name}</p>
+                                                <p className="text-xs text-muted-foreground">{user.role}</p>
+                                            </div>
+                                        </div>
+                                        {canManageTeam ? (
+                                            <input
+                                                type="checkbox"
+                                                className="h-5 w-5 rounded bg-input border-border text-primary focus:ring-primary"
+                                                checked={selectedTeamMemberIds.includes(user.id)}
+                                                onChange={() => {
+                                                    setSelectedTeamMemberIds(prev =>
+                                                        prev.includes(user.id)
+                                                            ? prev.filter(id => id !== user.id)
+                                                            : [...prev, user.id]
+                                                    );
+                                                }}
+                                            />
+                                        ) : (
+                                            selectedTeamMemberIds.includes(user.id) && <div className="h-5 w-5 text-primary"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </Card>
+                );
             case 'finance':
                 return <FinanceView project={project} userProfile={userProfile} onUpdateProject={onProjectUpdate} />;
             case 'photos':
@@ -141,12 +256,6 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
                             userProfile={userProfile}
                             onAddMilestone={handleAddMilestone}
                         />;
-            case 'risks':
-                return <RiskAnalysis project={project} />;
-            case 'resources':
-                return <ResourceView project={project} />;
-            case 'models':
-                return <ModelsView project={project} />;
             case 'budget':
                 return <BudgetView project={project} />;
             default:
@@ -162,14 +271,12 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
 
     const tabs: {id: Tab, label: string}[] = [
         { id: 'tasks', label: 'Tasks' },
+        { id: 'team', label: 'Team' },
+        { id: 'timeline', label: 'Timeline' },
+        { id: 'milestones', label: 'Milestones' },
         { id: 'finance', label: 'Finance' },
         { id: 'budget', label: 'Budget' },
         { id: 'photos', label: 'Progress Photos' },
-        { id: 'timeline', label: 'Timeline' },
-        { id: 'milestones', label: 'Milestones' },
-        { id: 'risks', label: 'Risk Analysis' },
-        { id: 'resources', label: 'Resources' },
-        { id: 'models', label: '3D Models' },
     ];
 
     return (
