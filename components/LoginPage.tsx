@@ -3,15 +3,13 @@ import { supabase } from '../lib/supabaseClient';
 import Button from './ui/Button';
 import Input from './ui/Input';
 
-type AuthMode = 'signIn' | 'signUp';
-
 const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
-  const [mode, setMode] = useState<AuthMode>('signIn');
+  const [authMessage, setAuthMessage] = useState('');
   
   const [isInitialSetup, setIsInitialSetup] = useState(false);
   const [checkingSetup, setCheckingSetup] = useState(true);
@@ -27,13 +25,10 @@ const LoginPage: React.FC = () => {
         
         if (count === 0) {
           setIsInitialSetup(true);
-          setMode('signUp');
         }
       } catch (err) {
         console.error("Error checking for initial setup:", err);
-        // Default to sign-in only if check fails
-        setIsInitialSetup(false);
-        setMode('signIn');
+        setError("Could not connect to the database to check setup status. Please verify your Supabase credentials.");
       } finally {
         setCheckingSetup(false);
       }
@@ -45,8 +40,9 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    setAuthMessage('');
 
-    if (mode === 'signUp') {
+    if (isInitialSetup) { // Always sign up for initial setup
       if (password.length < 6) {
         setError("Password must be at least 6 characters long.");
         setLoading(false);
@@ -64,24 +60,15 @@ const LoginPage: React.FC = () => {
       if (signUpError) {
         setError(signUpError.message);
       } else {
-        alert("Sign up successful! Please check your email to confirm your account.");
+        setAuthMessage("Admin account creation initiated! Please check your email to confirm your account. This page will reload once you sign in.");
       }
-    } else { // 'signIn'
+    } else { // Always sign in for subsequent uses
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) {
         setError(signInError.message);
       }
     }
-
     setLoading(false);
-  };
-  
-  const toggleMode = (newMode: AuthMode) => {
-    setError('');
-    setEmail('');
-    setPassword('');
-    setFullName('');
-    setMode(newMode);
   };
 
   if (checkingSetup) {
@@ -93,22 +80,20 @@ const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="p-8 bg-card/50 backdrop-blur-lg border border-border rounded-lg shadow-2xl w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center text-primary mb-2">
-          {isInitialSetup && mode === 'signUp' ? 'Welcome, Administrator!' : 'Welcome to MEP-Dash'}
-        </h1>
-        <p className="text-center text-muted-foreground mb-8">
-          {isInitialSetup && mode === 'signUp' ? 'Create the first admin account to begin.' : 'Please sign in to continue.'}
-        </p>
-
-        {isInitialSetup && (
-          <div className="flex border border-border rounded-lg p-1 mb-6 bg-secondary">
-            <button onClick={() => toggleMode('signIn')} className={`w-1/2 py-2 rounded-md text-sm font-semibold transition-colors ${mode === 'signIn' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-muted'}`}>Sign In</button>
-            <button onClick={() => toggleMode('signUp')} className={`w-1/2 py-2 rounded-md text-sm font-semibold transition-colors ${mode === 'signUp' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-muted'}`}>Sign Up</button>
-          </div>
+        {isInitialSetup ? (
+          <>
+            <h1 className="text-3xl font-bold text-center text-primary mb-2">Welcome, Administrator!</h1>
+            <p className="text-center text-muted-foreground mb-8">Create the first admin account to begin.</p>
+          </>
+        ) : (
+          <>
+            <h1 className="text-3xl font-bold text-center text-primary mb-2">Welcome to MEP-Dash</h1>
+            <p className="text-center text-muted-foreground mb-8">Please sign in to continue.</p>
+          </>
         )}
 
         <form onSubmit={handleAuthAction} className="space-y-4">
-          {mode === 'signUp' && (
+          {isInitialSetup && (
             <div>
               <label htmlFor="fullName" className="block text-sm font-medium text-muted-foreground">Full Name</label>
               <Input id="fullName" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
@@ -123,10 +108,11 @@ const LoginPage: React.FC = () => {
             <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
           </div>
 
-          {error && <p className="text-sm text-red-400 bg-red-500/20 p-3 rounded-md">{error}</p>}
+          {error && <p className="text-sm text-red-400 bg-red-500/20 p-3 rounded-md text-center">{error}</p>}
+          {authMessage && <p className="text-sm text-green-400 bg-green-500/20 p-3 rounded-md text-center">{authMessage}</p>}
           
-          <Button type="submit" disabled={loading} variant="primary" className="w-full" icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12.75 15l3-3m0 0l-3-3m3 3h-7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}>
-            {loading ? (mode === 'signIn' ? 'Signing In...' : 'Creating Account...') : (mode === 'signIn' ? 'Sign In' : 'Sign Up')}
+          <Button type="submit" disabled={loading || !!authMessage} variant="primary" className="w-full" icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12.75 15l3-3m0 0l-3-3m3 3h-7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}>
+            {loading ? (isInitialSetup ? 'Creating Account...' : 'Signing In...') : (isInitialSetup ? 'Create Admin Account' : 'Sign In')}
           </Button>
         </form>
       </div>

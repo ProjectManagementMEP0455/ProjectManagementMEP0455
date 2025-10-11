@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import Button from './ui/Button';
 
-const sqlScript = `-- MEP-DASH: UNIVERSAL RESET & SETUP SCRIPT V5
+const sqlScript = `-- MEP-DASH: UNIVERSAL RESET & SETUP SCRIPT V6
 -- This script safely cleans up previous attempts and sets up the
 -- entire database from scratch for a multi-user, persistent application.
--- It is safe to run multiple times.
+-- It is safe to run multiple times. V6 fixes critical auth bugs.
 --
 -- INSTRUCTIONS:
 -- 1. In your Supabase Dashboard, go to Storage and create THREE new
@@ -134,8 +134,8 @@ CREATE TABLE public.progress_photos (
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
-  user_count integer;
   assigned_role public.user_role;
+  user_count integer;
 BEGIN
   -- Check for a role passed from an admin during creation via metadata
   assigned_role := (NEW.raw_user_meta_data->>'role')::public.user_role;
@@ -147,9 +147,8 @@ BEGIN
       -- This is the first user signing up, make them Admin
       assigned_role := 'Admin';
     ELSE
-      -- Subsequent sign-ups get a default role. This path is now unlikely
-      -- as public sign-up is disabled, but it's a safe default.
-      assigned_role := 'Site Engineer / Technician';
+      -- Subsequent public sign-ups are not allowed.
+      RAISE EXCEPTION 'Public sign-up is disabled. An administrator must create your account.';
     END IF;
   END IF;
 
@@ -255,9 +254,13 @@ ALTER TABLE public.requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.progress_photos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.materials_master ENABLE ROW LEVEL SECURITY;
 
+-- Give anon role permission to read profiles table for the initial setup check
+GRANT SELECT ON TABLE public.profiles TO anon;
+
 -- POLICIES
 CREATE POLICY "Public profiles are viewable by everyone." ON public.profiles FOR SELECT USING (true);
-CREATE POLICY "Users can insert/update their own profile." ON public.profiles FOR ALL USING (auth.uid() = id);
+CREATE POLICY "Users can insert their own profile." ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
+CREATE POLICY "Users can update their own profile." ON public.profiles FOR UPDATE USING (auth.uid() = id);
 CREATE POLICY "Admins can update any profile." ON public.profiles FOR UPDATE USING (public.is_admin(auth.uid()));
 
 CREATE POLICY "Admins or team members can view projects." ON public.projects FOR SELECT USING (public.is_member_of_project(id, auth.uid()) OR public.is_admin(auth.uid()));

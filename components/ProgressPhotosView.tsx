@@ -40,7 +40,8 @@ const ProgressPhotosView: React.FC<ProgressPhotosViewProps> = ({ project, userPr
                 .eq('project_id', project.id)
                 .order('photo_date', { ascending: false });
             if (error) throw error;
-            setPhotos(data as any[]);
+            // FIX: Ensure 'photos' state is correctly typed and handles null data.
+            setPhotos((data as ProgressPhoto[]) || []);
         } catch (err: any) {
             console.error("Error fetching photos:", err);
             setError("Could not load progress photos.");
@@ -86,7 +87,10 @@ const ProgressPhotosView: React.FC<ProgressPhotosViewProps> = ({ project, userPr
             
             if (dbError) throw dbError;
 
-            setPhotos([dbData as any, ...photos]);
+            // FIX: Ensure new photo is correctly typed and checked for null before updating state.
+            if (dbData) {
+                setPhotos([dbData as ProgressPhoto, ...photos]);
+            }
             setPhotoFile(null);
             setPhotoCaption('');
             (e.target as HTMLFormElement).reset();
