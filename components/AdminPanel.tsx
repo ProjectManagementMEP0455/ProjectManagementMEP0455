@@ -1,15 +1,71 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { Profile, UserRole, Page } from '../types';
+import { Profile, UserRole, Page, ProjectCompletionMethod } from '../types';
 import Card from './ui/Card';
 import Avatar from './ui/Avatar';
 import Button from './ui/Button';
 import Input from './ui/Input';
 import Select from './ui/Select';
+import { useAppSettings } from '../App';
 
 interface AdminPanelProps {
     currentUserProfile: Profile | null;
     navigateTo: (page: Page) => void;
+}
+
+const ProjectRulesSettings: React.FC = () => {
+    const { settings, refreshSettings } = useAppSettings();
+    const [completionMethod, setCompletionMethod] = useState<ProjectCompletionMethod>(settings.project_completion_method);
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+
+    useEffect(() => {
+        setCompletionMethod(settings.project_completion_method);
+    }, [settings]);
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        setSaveStatus(null);
+        const { error } = await supabase
+            .from('app_settings')
+            .update({ value: completionMethod })
+            .eq('key', 'project_completion_method');
+        
+        if (error) {
+            setSaveStatus({ type: 'error', message: 'Failed to save settings: ' + error.message });
+        } else {
+            setSaveStatus({ type: 'success', message: 'Settings saved successfully!' });
+            await refreshSettings();
+        }
+        setIsSaving(false);
+        setTimeout(() => setSaveStatus(null), 3000);
+    };
+
+    return (
+        <Card className="p-6">
+            <h3 className="text-xl font-semibold text-foreground mb-4">Project Calculation Rules</h3>
+            <div className="space-y-4">
+                <div>
+                    <label htmlFor="completionMethod" className="block text-sm font-medium text-muted-foreground">Overall Project Completion Percentage is calculated based on:</label>
+                    <Select
+                        id="completionMethod"
+                        value={completionMethod}
+                        onChange={e => setCompletionMethod(e.target.value as ProjectCompletionMethod)}
+                    >
+                        <option value={ProjectCompletionMethod.BasedOnTasks}>Task Progress (Average % Complete)</option>
+                        <option value={ProjectCompletionMethod.BasedOnBudget}>Budget Spent (Spent vs Budget)</option>
+                        <option value={ProjectCompletionMethod.BasedOnMilestones}>Milestones Completed</option>
+                    </Select>
+                </div>
+                {saveStatus && <p className={`text-sm ${saveStatus.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>{saveStatus.message}</p>}
+                <div className="flex justify-end">
+                    <Button onClick={handleSave} disabled={isSaving} variant="primary">
+                        {isSaving ? 'Saving...' : 'Save Settings'}
+                    </Button>
+                </div>
+            </div>
+        </Card>
+    );
 }
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ currentUserProfile, navigateTo }) => {
@@ -122,6 +178,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentUserProfile, navigateTo 
         <div className="space-y-6">
             <h2 className="text-3xl font-bold text-foreground">Admin Panel</h2>
 
+            <ProjectRulesSettings />
+
             <Card className="p-6">
                 <h3 className="text-xl font-semibold text-foreground mb-4">Create New User</h3>
                 {createError && <p className="p-3 mb-4 bg-red-500/20 text-red-300 rounded-md">{createError}</p>}
@@ -152,7 +210,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentUserProfile, navigateTo 
                         </div>
                     </div>
                     <div className="flex justify-end pt-2">
-                        <Button type="submit" disabled={isCreating} variant="primary" icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.5 21c-2.305 0-4.47-.612-6.375-1.666z" /></svg>}>
+                        <Button type="submit" disabled={isCreating} variant="primary" icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.5 21c-2.305 0-4.47-.612-6.375-1.666z" /></svg>}>
                             {isCreating ? 'Creating User...' : 'Create User'}
                         </Button>
                     </div>
@@ -207,7 +265,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentUserProfile, navigateTo 
                     <Button
                         onClick={handleUpdateRoles}
                         variant="primary"
-                        icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                        icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
                     >
                         Save Role Changes
                     </Button>

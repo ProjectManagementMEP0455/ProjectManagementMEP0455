@@ -2,6 +2,7 @@ import React from 'react';
 import { Page, Project, ProjectStatus, Profile, UserRole } from '../types';
 import Card from './ui/Card';
 import Avatar from './ui/Avatar';
+import { useAppSettings } from '../App';
 
 interface ProjectListProps {
   navigateTo: (page: Page, projectId: number) => void;
@@ -17,9 +18,8 @@ const statusColors: { [key: string]: string } = {
 };
 
 const ProjectCard: React.FC<{ project: Project; onClick: () => void; }> = ({ project, onClick }) => {
-    const budget = project.budget || 0;
-    const spent = project.spent || 0;
-    const progress = budget > 0 ? (spent / budget) * 100 : 0;
+    const { calculateOverallProgress } = useAppSettings();
+    const progress = calculateOverallProgress(project);
     const teamMembers = project.teamMembers || [];
 
     return (

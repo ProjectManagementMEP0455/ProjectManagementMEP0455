@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import Button from './ui/Button';
 
-const sqlScript = `-- MEP-DASH: UNIVERSAL RESET & SETUP SCRIPT V7
+const sqlScript = `-- MEP-DASH: UNIVERSAL RESET & SETUP SCRIPT V8
 -- This script safely cleans up previous attempts and sets up the
 -- entire database from scratch for a multi-user, persistent application.
--- It is safe to run multiple times. V7 fixes critical auth bugs.
+-- It is safe to run multiple times. V8 adds a global settings table.
 --
 -- INSTRUCTIONS:
 -- 1. In your Supabase Dashboard, go to Storage and create THREE new
@@ -22,6 +22,7 @@ DROP FUNCTION IF EXISTS public.is_member_of_project(bigint, uuid) CASCADE;
 DROP FUNCTION IF EXISTS public.update_project_spent() CASCADE;
 DROP FUNCTION IF EXISTS public.update_project_budget() CASCADE;
 DROP FUNCTION IF EXISTS public.update_task_spent_cost() CASCADE;
+DROP TABLE IF EXISTS public.app_settings CASCADE;
 DROP TABLE IF EXISTS public.progress_photos CASCADE;
 DROP TABLE IF EXISTS public.requests CASCADE;
 DROP TABLE IF EXISTS public.expenses CASCADE;
@@ -125,6 +126,10 @@ CREATE TABLE public.progress_photos (
     photo_url text NOT NULL,
     caption text,
     photo_date date NOT NULL
+);
+CREATE TABLE public.app_settings (
+    key text PRIMARY KEY,
+    value text
 );
 
 
@@ -250,9 +255,12 @@ ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.progress_photos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.materials_master ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
+
 
 -- Give anon role permission to read profiles table for the initial setup check
 GRANT SELECT ON TABLE public.profiles TO anon;
+GRANT SELECT ON TABLE public.app_settings TO authenticated;
 
 -- POLICIES
 CREATE POLICY "Public profiles are viewable by everyone." ON public.profiles FOR SELECT USING (true);
@@ -287,8 +295,12 @@ CREATE POLICY "Admins or uploader can delete photos." ON public.progress_photos 
 CREATE POLICY "Admins can manage master materials list." ON public.materials_master FOR ALL USING (public.is_admin(auth.uid()));
 CREATE POLICY "Authenticated users can view materials." ON public.materials_master FOR SELECT USING (auth.role() = 'authenticated');
 
+CREATE POLICY "Authenticated users can read settings." ON public.app_settings FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Admins can manage settings." ON public.app_settings FOR ALL USING (public.is_admin(auth.uid()));
 
--- PART 4: FINALIZATION
+
+-- PART 4: FINALIZATION & DEFAULT DATA
+INSERT INTO public.app_settings (key, value) VALUES ('project_completion_method', 'BASED_ON_TASKS') ON CONFLICT (key) DO NOTHING;
 SELECT 'SUCCESS: MEP-Dash database has been set up for multi-user mode!' as status;`;
 
 const SqlSetupPreview: React.FC = () => {
@@ -336,7 +348,7 @@ const SqlSetupPreview: React.FC = () => {
                     Open Supabase SQL Editor
                 </a>
             )}
-             <Button onClick={copyToClipboard} variant="secondary" icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" /></svg>}>
+             <Button onClick={copyToClipboard} variant="secondary" icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" /></svg>}>
                  {copySuccess || 'Copy SQL Script'}
             </Button>
             </div>

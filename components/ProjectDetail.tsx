@@ -14,6 +14,7 @@ import ModelsView from './ModelsView';
 import BudgetView from './BudgetView';
 import FinanceView from './FinanceView';
 import ProgressPhotosView from './ProgressPhotosView';
+import { useAppSettings } from '../App';
 
 interface ProjectDetailProps {
   project: Project;
@@ -28,6 +29,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
     const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
     const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const { calculateOverallProgress } = useAppSettings();
 
     const teamMembers = project.teamMembers || [];
     
@@ -156,8 +158,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onProjectUpdate,
     const spent = project.spent || 0;
     const budgetProgress = budget > 0 ? (spent / budget) * 100 : 0;
     
-    const totalTaskProgress = project.tasks.reduce((sum, task) => sum + (task.percent_complete || 0), 0);
-    const overallProgress = project.tasks.length > 0 ? totalTaskProgress / project.tasks.length : 0;
+    const overallProgress = calculateOverallProgress(project);
 
     const tabs: {id: Tab, label: string}[] = [
         { id: 'tasks', label: 'Tasks' },

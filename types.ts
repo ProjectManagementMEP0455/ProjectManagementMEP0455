@@ -37,6 +37,12 @@ export enum RequestStatus {
   Processed = 'Processed',
 }
 
+export enum ProjectCompletionMethod {
+    BasedOnTasks = 'BASED_ON_TASKS',
+    BasedOnBudget = 'BASED_ON_BUDGET',
+    BasedOnMilestones = 'BASED_ON_MILESTONES',
+}
+
 export interface Task {
   id: number;
   created_at: string;
@@ -298,6 +304,20 @@ export type Database = {
         Row: Material;
         Insert: Omit<Material, 'id' | 'created_at'>;
         Update: Partial<Omit<Material, 'id' | 'created_at'>>;
+      };
+      app_settings: {
+        Row: {
+          key: string;
+          value: string;
+        };
+        Insert: {
+          key: string;
+          value: string;
+        };
+        Update: {
+          key?: string;
+          value?: string;
+        };
       };
     };
     Views: {

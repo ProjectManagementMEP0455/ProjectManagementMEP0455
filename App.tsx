@@ -1,7 +1,7 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabaseClient';
-import { Page, Profile, Project, ProjectStatus } from './types';
+import { Page, Profile, Project, ProjectStatus, ProjectCompletionMethod } from './types';
 import LoginPage from './components/LoginPage';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -61,6 +61,27 @@ export const useTheme = () => {
   return context;
 };
 
+// --- App Settings Context ---
+type AppSettings = {
+  project_completion_method: ProjectCompletionMethod;
+};
+
+type AppSettingsContextType = {
+  settings: AppSettings;
+  calculateOverallProgress: (project: Project) => number;
+  refreshSettings: () => Promise<void>;
+};
+
+const AppSettingsContext = createContext<AppSettingsContextType | undefined>(undefined);
+
+export const useAppSettings = () => {
+    const context = useContext(AppSettingsContext);
+    if (context === undefined) {
+        throw new Error('useAppSettings must be used within an AppSettingsProvider');
+    }
+    return context;
+};
+
 const AppContent: React.FC = () => {
   const [isSupabaseConfigured, setIsSupabaseConfigured] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
@@ -70,6 +91,46 @@ const AppContent: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>(Page.Dashboard);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  const [settings, setSettings] = useState<AppSettings>({
+      project_completion_method: ProjectCompletionMethod.BasedOnTasks,
+  });
+
+  const fetchSettings = useCallback(async () => {
+      const { data, error } = await supabase.from('app_settings').select('*');
+      if (error) {
+          console.error("Could not fetch app settings:", error);
+      } else {
+          const settingsMap = data.reduce((acc, setting) => {
+              acc[setting.key] = setting.value;
+              return acc;
+          }, {} as { [key: string]: string });
+
+          setSettings({
+              project_completion_method: (settingsMap.project_completion_method as ProjectCompletionMethod) || ProjectCompletionMethod.BasedOnTasks,
+          });
+      }
+  }, []);
+
+  const calculateOverallProgress = (project: Project): number => {
+      switch (settings.project_completion_method) {
+          case ProjectCompletionMethod.BasedOnBudget:
+              const budget = project.budget || 0;
+              const spent = project.spent || 0;
+              if (budget === 0) return 0;
+              return Math.min((spent / budget) * 100, 100);
+          case ProjectCompletionMethod.BasedOnMilestones:
+              if (project.milestones.length === 0) return 0;
+              const completedMilestones = project.milestones.filter(m => m.completed).length;
+              return (completedMilestones / project.milestones.length) * 100;
+          case ProjectCompletionMethod.BasedOnTasks:
+          default:
+              if (project.tasks.length === 0) return 0;
+              const totalTaskProgress = project.tasks.reduce((sum, task) => sum + (task.percent_complete || 0), 0);
+              return totalTaskProgress / project.tasks.length;
+      }
+  };
+
 
   useEffect(() => {
     const supabaseUrl = localStorage.getItem('supabaseUrl');
@@ -102,15 +163,13 @@ const AppContent: React.FC = () => {
   const fetchAllData = async (userId: string) => {
     setLoading(true);
     try {
-      const { data: profileData, error: profileError } = await supabase
+      const profilePromise = supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
-      if (profileError) throw profileError;
-      setUserProfile(profileData);
-
-      const { data: projectsData, error: projectsError } = await supabase
+      
+      const projectsPromise = supabase
         .from('projects')
         .select(`
           *,
@@ -119,9 +178,18 @@ const AppContent: React.FC = () => {
           team_member_joins:project_team_members(*, profile:profiles!user_id(*))
         `)
         .order('created_at', { ascending: false });
+
+      const settingsPromise = fetchSettings();
+      
+      const [
+          { data: profileData, error: profileError }, 
+          { data: projectsData, error: projectsError }
+      ] = await Promise.all([profilePromise, projectsPromise, settingsPromise]);
+      
+      if (profileError) throw profileError;
+      setUserProfile(profileData);
         
       if (projectsError) throw projectsError;
-
       const formattedProjects = (projectsData || []).map((p: any) => ({
         ...p,
         status: p.status as ProjectStatus,
@@ -142,7 +210,7 @@ const AppContent: React.FC = () => {
     } else {
       setLoading(false);
     }
-  }, [session]);
+  }, [session, fetchSettings]);
   
   const handleAddProject = async (projectData: NewProjectFormData) => {
     if (!session?.user) return;
@@ -243,24 +311,26 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-background text-foreground">
-      <Sidebar 
-        currentPage={currentPage} 
-        navigateTo={navigateTo} 
-        userProfile={userProfile}
-        isCollapsed={isSidebarCollapsed}
-      />
-      <div className="flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out">
-        <Header 
-            user={userProfile} 
-            isSidebarCollapsed={isSidebarCollapsed}
-            setIsSidebarCollapsed={setIsSidebarCollapsed}
+    <AppSettingsContext.Provider value={{ settings, calculateOverallProgress, refreshSettings: fetchSettings }}>
+      <div className="flex h-screen bg-background text-foreground">
+        <Sidebar 
+          currentPage={currentPage} 
+          navigateTo={navigateTo} 
+          userProfile={userProfile}
+          isCollapsed={isSidebarCollapsed}
         />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-4 sm:p-6 lg:p-8">
-            {renderContent()}
-        </main>
+        <div className="flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out">
+          <Header 
+              user={userProfile} 
+              isSidebarCollapsed={isSidebarCollapsed}
+              setIsSidebarCollapsed={setIsSidebarCollapsed}
+          />
+          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-4 sm:p-6 lg:p-8">
+              {renderContent()}
+          </main>
+        </div>
       </div>
-    </div>
+    </AppSettingsContext.Provider>
   );
 };
 
